@@ -1,32 +1,26 @@
-import { Text, View, StyleSheet , TextInput, Button,TouchableOpacity } from 'react-native';
-import React, {useState } from 'react';
-import Log_id from './tabs/Log_id';
-import Log_PassWord from './tabs/Log_PassWord'
+import { Text, View, StyleSheet , Button,TouchableOpacity } from 'react-native';
+import React from 'react';
 import { Link } from 'expo-router';
+import Log_PassWord from '../tabs/Log_PassWord';
+import Log_id from '../tabs/Log_id';
 
 export default function Index() {
   return (
     <View style={styles.container}>
-      <Text style = {styles.loginname}>
-        로그인
+      <Text style = {styles.sign_up_name}>
+        회원가입
       </Text>
       <Text style={styles.Logcontainer}>아이디</Text>
       <Log_id />
-      <Text>비밀번호</Text>
+      <Text >비밀번호</Text>
+      <Log_PassWord />
+      <Text>비밀번호 확인</Text>
       <Log_PassWord />
       <TouchableOpacity
         style = {styles.button}>
-        <Text style = {styles.buttonText}> 로그인</Text>
+        <Link href = "../Allergy" style = {styles.buttonText}>확인</Link>
       </TouchableOpacity>
-      <Link href="./SignUp/sign_up" style={styles.sign_up_button}>
-        회원가입 시작하기
-      </Link>
-      <Link href="./main" style={styles.sign_up_button}>
-        Test
-      </Link>
-      <Button
-        title = "Google"
-        />
+
 
     </View>
   );
@@ -39,15 +33,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  loginname: {
+  sign_up_name: {
     color : '#000',
-    fontSize : 45,
+    fontSize : 30,
     textAlign : "center",
     marginTop : -400,
     padding : 50,
   },
   Logcontainer : {
-    padding : 0,
+    paddingRight : 0,
   },
   text: {
     color: '#fff',
