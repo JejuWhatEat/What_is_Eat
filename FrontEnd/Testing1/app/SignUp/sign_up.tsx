@@ -1,8 +1,9 @@
-import { Text, View, StyleSheet , Button,TouchableOpacity } from 'react-native';
-import React from 'react';
+import { Text, View, StyleSheet , TextInput, Button,TouchableOpacity } from 'react-native';
 import { Link } from 'expo-router';
-import Log_PassWord from '../tabs/Log_PassWord';
 import Log_id from '../tabs/Log_id';
+import Log_PassWord from '../tabs/Log_PassWord'
+import React, {useState } from 'react';
+
 
 export default function Index() {
   return (
@@ -11,11 +12,11 @@ export default function Index() {
         회원가입
       </Text>
       <Text style={styles.Logcontainer}>아이디</Text>
-      <Log_id />
+      <Log_id/>
       <Text >비밀번호</Text>
-      <Log_PassWord />
+      <Log_PassWord/>
       <Text>비밀번호 확인</Text>
-      <Log_PassWord />
+      <Log_PassWord/>
       <TouchableOpacity
         style = {styles.button}>
         <Link href = "../Allergy" style = {styles.buttonText}>확인</Link>

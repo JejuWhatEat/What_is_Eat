@@ -104,9 +104,8 @@ const Allergy = () => (
         keyExtractor={item => item.id}
       />
       <TouchableOpacity
-        style={styles.button}
-        onPress={() => alert('로그인 버튼 클릭됨')}>
-        <Text style={styles.buttonText}>로그인</Text>
+        style={styles.button}>
+        <Link href = './PreferedFood' style = {styles.buttonText}> 확인 </Link>
       </TouchableOpacity>
     </SafeAreaView>
   </SafeAreaProvider>
@@ -117,9 +116,10 @@ const styles = StyleSheet.create({
     flex: 1,
     marginTop: StatusBar.currentHeight || 0,
     alignItems: 'center',
+    backgroundColor: '#FEBE98',
   },
   item: {
-    backgroundColor: '#9CABC2',
+    backgroundColor: '#F1B198',
     padding: 20,
     width: 300,
     marginHorizontal: 10,
@@ -132,13 +132,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   arrowButton: {
-    backgroundColor: '#FFE9AF',
+    backgroundColor: '#FEBE98',
     borderRadius: 20,
     padding: 5,
   },
   arrowText: {
-    fontSize: 20,
-    color: '#fff',
+    fontSize: 15,
+    color: '#000',
   },
   yesNoButtons: {
     flexDirection: 'row',
@@ -197,11 +197,11 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 20,
+    color: '#000',
+    fontSize: 15,
   },
   itemButton: {
-    backgroundColor: '#FFE9AF',
+    backgroundColor: '#FEBE98',
     borderRadius: 20,
     paddingVertical: 5,
     paddingHorizontal: 10,

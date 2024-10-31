@@ -15,6 +15,7 @@ return (
         onChangeText={onChangeText}
         value={password}
         placeholder="비밀번호를 입력하세요..."
+        secureTextEntry = {true}
         style={styles.input}
         />
     </View>
