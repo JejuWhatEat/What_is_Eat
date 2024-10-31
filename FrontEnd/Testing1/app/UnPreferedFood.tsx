@@ -18,7 +18,7 @@ const FOOD_DATA = Array.from({ length: 50 }, (_, index) => ({
   selected: false,
 }));
 
-const FavoriteFoodSelection = () => {
+const HateFoodSelection = () => {
   const [selectedCount, setSelectedCount] = useState(0);
   const [foodData, setFoodData] = useState(FOOD_DATA);
 
@@ -38,7 +38,7 @@ const FavoriteFoodSelection = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>좋아하는 음식</Text>
+      <Text style={styles.title}>싫어하는 음식</Text>
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
@@ -70,10 +70,10 @@ const FavoriteFoodSelection = () => {
       />
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>뒤로가기</Text>
+        <Link href = './PreferedFood' style = {styles.buttonText}>뒤로가기</Link>
         </TouchableOpacity>
         <TouchableOpacity style={styles.button}>
-          <Link href = './UnPreferedFood' style = {styles.buttonText}>다음</Link>
+          <Text style={styles.buttonText}>확인</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -165,4 +165,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default FavoriteFoodSelection;
+export default HateFoodSelection;

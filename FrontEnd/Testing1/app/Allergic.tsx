@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Link } from 'expo-router';
+
 
 const ALLERGIES = [
   '갑각류', '복숭아', '땅콩', '달걀',
@@ -41,7 +43,7 @@ const AllergySelection = () => {
         ))}
       </ScrollView>
       <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm}>
-        <Text style={styles.confirmText}>확인</Text>
+        <Link href ='./Allergy' style={styles.confirmText}>확인</Link>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -50,7 +52,7 @@ const AllergySelection = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4A79A',
+    backgroundColor: '#FEBE98',
     alignItems: 'center',
     justifyContent: 'center',
   },

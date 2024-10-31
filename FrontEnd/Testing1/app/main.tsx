@@ -1,4 +1,4 @@
-import React from 'react';
+/*import React from 'react';
 import {
   View,
   Text,
@@ -106,3 +106,4 @@ const styles = StyleSheet.create({
 });
 
 export default RecommendedFoodScreen;
+*/
