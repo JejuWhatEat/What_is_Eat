@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Alert
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { setGlobalAllergies } from './Allergy';
 
 const ALLERGIES = [
   '갑각류', '복숭아', '땅콩', '달걀',
@@ -10,6 +19,7 @@ const ALLERGIES = [
 
 const AllergySelection = () => {
   const [selectedAllergies, setSelectedAllergies] = useState<string[]>([]);
+  const router = useRouter();
 
   const toggleAllergy = (allergy: string) => {
     if (selectedAllergies.includes(allergy)) {
@@ -20,7 +30,9 @@ const AllergySelection = () => {
   };
 
   const handleConfirm = () => {
-    alert(`선택된 알레르기: ${selectedAllergies.join(', ')}`);
+    setGlobalAllergies(selectedAllergies);
+    Alert.alert('성공', '알러지 정보가 선택되었습니다.');
+    router.back();
   };
 
   return (
@@ -36,7 +48,12 @@ const AllergySelection = () => {
             ]}
             onPress={() => toggleAllergy(allergy)}
           >
-            <Text style={styles.allergyText}>{allergy}</Text>
+            <Text style={[
+              styles.allergyText,
+              selectedAllergies.includes(allergy) && styles.selectedAllergyText
+            ]}>
+              {allergy}
+            </Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -80,6 +97,9 @@ const styles = StyleSheet.create({
   allergyText: {
     color: '#333',
     fontSize: 16,
+  },
+  selectedAllergyText: {
+    color: '#FFF',
   },
   confirmButton: {
     backgroundColor: '#FFF',
