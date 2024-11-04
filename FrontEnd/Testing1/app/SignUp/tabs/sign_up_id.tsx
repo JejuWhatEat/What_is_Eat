@@ -1,41 +1,41 @@
-import React, {useState} from 'react';
-import { View, TextInput, StyleSheet} from 'react-native';
+// Testing1/app/SignUp/tabs/sign_up_id.tsx
+import React, { useState } from 'react';
+import { View, TextInput, StyleSheet } from 'react-native';
 
-const sign_up_id =() => {
-    const [sign_up_id, setText] = useState('');
+interface Props {
+  onChangeText: (text: string) => void;
+  value: string;
+}
 
-const onChangeText= (inputText) => {
-    setText(inputText);
-
-};
-
-return (
+const Sign_up_id: React.FC<Props> = ({ onChangeText, value }) => {
+  return (
     <View style={styles.container}>
-        <TextInput
+      <TextInput
         onChangeText={onChangeText}
-        value={sign_up_id}
+        value={value}
         placeholder="이메일을 입력하세요..."
         style={styles.input}
-        />
+        keyboardType="email-address"
+        autoCapitalize="none"
+      />
     </View>
-);  
+  );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        paddingHorizontal: 46,
-        paddingTop: 10,
-        paddingBottom: 20,
-    },
-    input: {
-        height : 40,
-        width : 200,
-        borderColor: 'gray',
-        borderWidth: 1,
-        borderRadius: 10,
-        paddingHorizontal: 8,
-
-    },
+  container: {
+    paddingHorizontal: 46,
+    paddingTop: 10,
+    paddingBottom: 20,
+  },
+  input: {
+    height: 40,
+    width: 200,
+    borderColor: 'gray',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 8,
+  },
 });
 
-export default sign_up_id;
+export default Sign_up_id;
