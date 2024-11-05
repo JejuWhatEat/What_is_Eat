@@ -1,5 +1,5 @@
 {
-  "name": "testing1",
+  "name": "whatiseatfe",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
@@ -15,9 +15,11 @@
     "preset": "jest-expo"
   },
   "dependencies": {
-    "@expo/vector-icons": "^14.0.4",
+    "@emotion/native": "^11.11.0",
+    "@emotion/react": "^11.13.3",
+    "@expo/vector-icons": "^14.0.2",
     "@react-navigation/bottom-tabs": "^6.6.1",
-    "@react-navigation/native": "^6.1.18",
+    "@react-navigation/native": "^6.0.2",
     "@react-navigation/native-stack": "^6.11.0",
     "expo": "~51.0.28",
     "expo-constants": "~16.0.2",
