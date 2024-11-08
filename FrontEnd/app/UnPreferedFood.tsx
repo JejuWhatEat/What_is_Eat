@@ -11,14 +11,50 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
 
+const getImageById = (id) => {
+  switch (id) {
+    case '1':
+      return require('./images/image21.jpeg');
+    case '2':
+      return require('./images/image22.jpeg');
+    case '3':
+      return require('./images/image23.jpeg');
+    case '4':
+      return require('./images/image24.jpeg');
+    case '5':
+      return require('./images/image25.jpeg');
+    case '6':
+      return require('./images/image6.jpeg');
+    case '7':
+      return require('./images/image26.jpeg');
+    case '8':
+      return require('./images/image27.jpeg');
+    case '9':
+      return require('./images/image28.jpeg');
+    case '10':
+      return require('./images/image10.jpeg');
+    case '11':
+      return require('./images/image11.jpeg');
+    case '12':
+      return require('./images/image12.jpeg');
+    case '13':
+      return require('./images/image1.jpeg');
+    case '14':
+      return require('./images/image14.jpeg');
+    case '15':
+      return require('./images/image15.jpeg');
+    case '16':
+      return require('./images/image2.jpeg');
+  }
+};
 
-const FOOD_DATA = Array.from({ length: 50 }, (_, index) => ({
+const FOOD_DATA = Array.from({ length: 16 }, (_, index) => ({
   id: `${index + 1}`,
-  image: `https://via.placeholder.com/100?text=Food+${index + 1}`,
+  image: getImageById(`${index + 1}`),
   selected: false,
 }));
 
-const HateFoodSelection = () => {
+const PreferedFood = () => {
   const [selectedCount, setSelectedCount] = useState(0);
   const [foodData, setFoodData] = useState(FOOD_DATA);
 
@@ -59,21 +95,27 @@ const HateFoodSelection = () => {
             onPress={() => toggleSelection(item.id)}
           >
             <Image
-              source={{ uri: item.image }}
+              source={item.image} // getImageById 함수로 가져온 이미지
               style={styles.foodImage}
               resizeMode="cover"
             />
-            {item.selected && <View style={styles.checkMark}><Text style={styles.checkText}>✔</Text></View>}
+            {item.selected && (
+              <View style={styles.checkMark}>
+                <Text style={styles.checkText}>✔</Text>
+              </View>
+            )}
           </TouchableOpacity>
         )}
         contentContainerStyle={styles.foodList}
       />
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.button}>
-        <Link href = './PreferedFood' style = {styles.buttonText}>뒤로가기</Link>
+          <Text style={styles.buttonText}>뒤로가기</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>확인</Text>
+          <Link href="./main" style={styles.buttonText}>
+            다음
+          </Link>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -83,7 +125,7 @@ const HateFoodSelection = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4A79A',
+    backgroundColor: '#FEBE98',
     alignItems: 'center',
     paddingTop: 20,
   },
@@ -165,4 +207,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default HateFoodSelection;
+export default PreferedFood;
