@@ -16,7 +16,7 @@ export default function Index() {
       <Log_PassWord />
       <TouchableOpacity
         style = {styles.button}>
-        <Text style = {styles.buttonText}> 로그인</Text>
+        <Link href="./main" style = {styles.buttonText}>로그인</Link>
       </TouchableOpacity>
       <Link href="./SignUp/sign_up" style={styles.sign_up_button}>
         회원가입 시작하기
