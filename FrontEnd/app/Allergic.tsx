@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
 
-
 const ALLERGIES = [
   '갑각류', '복숭아', '땅콩', '달걀',
   '견과', '밀', '생선', '우유',
@@ -12,6 +11,7 @@ const ALLERGIES = [
 
 const AllergySelection = () => {
   const [selectedAllergies, setSelectedAllergies] = useState<string[]>([]);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   const toggleAllergy = (allergy: string) => {
     if (selectedAllergies.includes(allergy)) {
@@ -22,7 +22,7 @@ const AllergySelection = () => {
   };
 
   const handleConfirm = () => {
-    alert(`선택된 알레르기: ${selectedAllergies.join(', ')}`);
+    setShowConfirmation(true); // 선택된 항목을 화면에 표시하도록 설정
   };
 
   return (
@@ -42,9 +42,21 @@ const AllergySelection = () => {
           </TouchableOpacity>
         ))}
       </ScrollView>
+
       <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm}>
         <Link href ='./Allergy' style={styles.confirmText}>확인</Link>
       </TouchableOpacity>
+
+      {showConfirmation && (
+        <View style={styles.confirmationContainer}>
+          <Text style={styles.confirmationTitle}>선택된 알레르기:</Text>
+          {selectedAllergies.length > 0 ? (
+            <Text style={styles.selectedAllergies}>{selectedAllergies.join(', ')}</Text>
+          ) : (
+            <Text style={styles.selectedAllergies}>선택된 알레르기가 없습니다.</Text>
+          )}
+        </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -96,6 +108,20 @@ const styles = StyleSheet.create({
     color: '#FF0000',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  confirmationContainer: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  confirmationTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#4A4A4A',
+    marginBottom: 10,
+  },
+  selectedAllergies: {
+    fontSize: 16,
+    color: '#333',
   },
 });
 

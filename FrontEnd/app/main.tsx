@@ -1,13 +1,5 @@
 import React from 'react';
-import {
-  ScrollView,
-  Text,
-  StyleSheet,
-  View,
-  ImageBackground,
-  Animated,
-  useWindowDimensions,
-} from 'react-native';
+import {ScrollView, Text,StyleSheet, View, ImageBackground, Animated, useWindowDimensions, } from 'react-native';
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
 
 const images = [
@@ -47,11 +39,6 @@ const main = () => {
                 key={imageIndex}
               >
                 <ImageBackground source={image} style={styles.card}>
-                  <View style={styles.textContainer}>
-                    <Text style={styles.infoText}>~
-                      {'추천 음식 ' + (imageIndex + 1)}
-                    </Text>
-                  </View>
                 </ImageBackground>
               </View>
             ))}
@@ -75,6 +62,7 @@ const main = () => {
               );
             })}
           </View>
+
         </View>
 
         <View style={styles.infoContainer}>
@@ -91,7 +79,7 @@ const main = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4A79A',
+    backgroundColor: '#FEBE98',
     alignItems: 'center',
     paddingTop: 50,
   },
@@ -122,9 +110,10 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   infoText: {
-    color: 'white',
+    color: 'black',
     fontSize: 16,
     fontWeight: 'bold',
+    padding : 10,
   },
   normalDot: {
     height: 8,
@@ -149,7 +138,6 @@ const styles = StyleSheet.create({
   infoTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 10,
     color: '#333',
   },
   infoTextList: {

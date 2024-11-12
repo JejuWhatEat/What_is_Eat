@@ -1,13 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  FlatList,
-  Image,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, TextInput, FlatList, Image, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
 
@@ -54,7 +46,7 @@ const FOOD_DATA = Array.from({ length: 16 }, (_, index) => ({
   selected: false,
 }));
 
-const PreferedFood = () => {
+const UnPreferedFood = () => {
   const [selectedCount, setSelectedCount] = useState(0);
   const [foodData, setFoodData] = useState(FOOD_DATA);
 
@@ -62,13 +54,20 @@ const PreferedFood = () => {
     const updatedData = foodData.map((item) => {
       if (item.id === id) {
         const isSelected = !item.selected;
-        setSelectedCount((prevCount) =>
-          isSelected ? prevCount + 1 : prevCount - 1
-        );
+        
+        // Check if the selected count exceeds 10
+        if (isSelected && selectedCount >= 10) {
+          Alert.alert('알림', '최대 10개까지 선택할 수 있습니다.');
+          return item;
+        }
+
+        // Update selected count
+        setSelectedCount((prevCount) => isSelected ? prevCount + 1 : prevCount - 1);
         return { ...item, selected: isSelected };
       }
       return item;
     });
+
     setFoodData(updatedData);
   };
 
@@ -83,7 +82,7 @@ const PreferedFood = () => {
         <TouchableOpacity style={styles.searchIcon}>
           <Text>🔍</Text>
         </TouchableOpacity>
-        <Text style={styles.counterText}>({selectedCount}/5)</Text>
+        <Text style={styles.counterText}>({selectedCount}/10)</Text>
       </View>
       <FlatList
         data={foodData}
@@ -207,4 +206,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PreferedFood;
+export default UnPreferedFood;

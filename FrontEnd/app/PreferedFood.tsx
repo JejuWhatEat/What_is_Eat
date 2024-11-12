@@ -1,13 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  FlatList,
-  Image,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, TextInput, FlatList, Image, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
 
@@ -62,13 +54,22 @@ const PreferedFood = () => {
     const updatedData = foodData.map((item) => {
       if (item.id === id) {
         const isSelected = !item.selected;
-        setSelectedCount((prevCount) =>
-          isSelected ? prevCount + 1 : prevCount - 1
-        );
+        // If the item is selected, we increase the count, otherwise decrease it
+        if (isSelected && selectedCount < 10) {
+          setSelectedCount((prevCount) => prevCount + 1);
+        } else if (!isSelected) {
+          setSelectedCount((prevCount) => prevCount - 1);
+        } else {
+          // If the count is already 10, alert the user
+          Alert.alert('알림', '최대 10개까지 선택할 수 있습니다.');
+          return item;
+        }
+
         return { ...item, selected: isSelected };
       }
       return item;
     });
+
     setFoodData(updatedData);
   };
 
@@ -83,7 +84,7 @@ const PreferedFood = () => {
         <TouchableOpacity style={styles.searchIcon}>
           <Text>🔍</Text>
         </TouchableOpacity>
-        <Text style={styles.counterText}>({selectedCount}/5)</Text>
+        <Text style={styles.counterText}>({selectedCount}/10)</Text>
       </View>
       <FlatList
         data={foodData}
@@ -95,7 +96,7 @@ const PreferedFood = () => {
             onPress={() => toggleSelection(item.id)}
           >
             <Image
-              source={item.image} // getImageById 함수로 가져온 이미지
+              source={item.image}
               style={styles.foodImage}
               resizeMode="cover"
             />

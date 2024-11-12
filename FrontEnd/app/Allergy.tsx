@@ -1,71 +1,63 @@
-import React, {useState} from 'react';
-import {View, FlatList, StyleSheet, Text, StatusBar, TouchableOpacity, TextInput, Switch} from 'react-native';
-import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
+import React, { useState } from 'react';
+import { View, FlatList, StyleSheet, Text, StatusBar, TouchableOpacity, TextInput, Switch } from 'react-native';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
 
 const DATA = [
-  {
-    id: '1',
-    title: '알러지 유무',
-  },
-  {
-    id: '2',
-    title: '비건인가요 ?',
-  },
-  {
-    id: '3',
-    title: '성별',
-  },
-  {
-    id: '4',
-    title: '랜덤 이름',
-  },
-  {
-    id: '5',
-    title: '닉네임 설정',
-  },
-  {
-    id: '6',
-    title: '닉네임 입력',
-  },
+  { id: '1', title: '알러지 유무' },
+  { id: '2', title: '비건인가요 ?' },
+  { id: '3', title: '성별' },
+  { id: '4', title: '랜덤 이름' },
+  { id: '5', title: '닉네임 설정' },
+  { id: '6', title: '닉네임 입력' },
 ];
 
-type ItemProps = {id: string, title: string};
+type ItemProps = { id: string, title: string };
 
-const Item = ({id, title}: ItemProps) => {
+const Item = ({ id, title }: ItemProps) => {
   const [isOn, setIsOn] = useState(false);
   const [nickname, setNickname] = useState('');
+
+  // 비건 선택 상태 (true/false)
+  const [veganChoice, setVeganChoice] = useState<boolean | null>(null);
+
+  // 성별 선택 상태
+  const [gender, setGender] = useState<string | null>(null);
 
   return (
     <View style={styles.item}>
       <Text style={styles.title}>{title}</Text>
       {id === '1' ? (
         <TouchableOpacity style={styles.arrowButton}>
-          <Link href = './Allergic' style={styles.arrowText}>→</Link>
+          <Link href='./Allergic' style={styles.arrowText}>→</Link>
         </TouchableOpacity>
       ) : id === '2' ? (
         <View style={styles.yesNoButtons}>
           <TouchableOpacity
-            style={styles.yesButton}
-            onPress={() => alert('Yes 선택')}>
+            style={[styles.yesButton, veganChoice === true && styles.selectedButton]}
+            onPress={() => setVeganChoice(veganChoice === true ? null : true)} // toggle between true and null
+          >
             <Text style={styles.buttonText}>Yes</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.noButton}
-            onPress={() => alert('No 선택')}>
+            style={[styles.noButton, veganChoice === false && styles.selectedButton]}
+            onPress={() => setVeganChoice(veganChoice === false ? null : false)} // toggle between false and null
+          >
             <Text style={styles.buttonText}>No</Text>
           </TouchableOpacity>
         </View>
       ) : id === '3' ? (
         <View style={styles.genderButtons}>
           <TouchableOpacity
-            style={styles.genderButton_man}
-            onPress={() => alert('남성 선택')}>
+            style={[styles.genderButton_man, gender === 'male' && styles.selectedButton]}
+            onPress={() => setGender(gender === 'male' ? null : 'male')} // toggle between 'male' and null
+          >
             <Text style={styles.buttonText}>남성</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.genderButton_woman}
-            onPress={() => alert('여성 선택')}>
+            style={[styles.genderButton_woman, gender === 'female' && styles.selectedButton]}
+            onPress={() => setGender(gender === 'female' ? null : 'female')} // toggle between 'female' and null
+          >
             <Text style={styles.buttonText}>여성</Text>
           </TouchableOpacity>
         </View>
@@ -100,12 +92,12 @@ const Allergy = () => (
     <SafeAreaView style={styles.container}>
       <FlatList
         data={DATA}
-        renderItem={({item}) => <Item id={item.id} title={item.title} />}
+        renderItem={({ item }) => <Item id={item.id} title={item.title} />}
         keyExtractor={item => item.id}
       />
       <TouchableOpacity
         style={styles.button}>
-        <Link href = './PreferedFood' style = {styles.buttonText}> 확인 </Link>
+        <Link href='./PreferedFood' style={styles.buttonText}> 확인 </Link>
       </TouchableOpacity>
     </SafeAreaView>
   </SafeAreaProvider>
@@ -205,6 +197,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingVertical: 5,
     paddingHorizontal: 10,
+  },
+  selectedButton: {
+    opacity: 0.5, // 선택된 버튼을 반투명하게 만듦
   },
 });
 
