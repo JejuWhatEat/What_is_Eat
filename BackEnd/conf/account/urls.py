@@ -1,7 +1,12 @@
+# urls.py
 from django.urls import path
-from . import views
+from .views import SignUpView, LoginView, save_allergies, save_profile , save_preferred_foods, save_unpreferred_foods
 
 urlpatterns = [
-    path('save-profile/', views.save_profile, name='save-profile'),
-    path('save-allergies/', views.save_allergies, name='save-allergies'),
+    path('signup/', SignUpView.as_view(), name='signup'),
+    path('login/', LoginView.as_view(), name='login'),
+    path('save-allergies/', save_allergies, name='save_allergies'),
+    path('save-profile/', save_profile, name='save_profile'),  # 추가
+    path('save-preferred-foods/', save_preferred_foods, name='save_preferred_foods'),
+    path('save-unpreferred-foods/', save_unpreferred_foods, name='save_unpreferred_foods'),
 ]

@@ -1,3 +1,4 @@
+// UnPreferedFood.tsx
 import React, { useState } from 'react';
 import {
   View,
@@ -7,9 +8,11 @@ import {
   FlatList,
   Image,
   TouchableOpacity,
+  Alert,
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Link } from 'expo-router';
+import { useRouter } from 'expo-router';
 
 const getImageById = (id) => {
   switch (id) {
@@ -54,11 +57,18 @@ const FOOD_DATA = Array.from({ length: 16 }, (_, index) => ({
   selected: false,
 }));
 
-const PreferedFood = () => {
+const UnPreferedFood = () => {
+  const router = useRouter();
   const [selectedCount, setSelectedCount] = useState(0);
   const [foodData, setFoodData] = useState(FOOD_DATA);
+  const [searchText, setSearchText] = useState('');
 
   const toggleSelection = (id) => {
+    if (selectedCount >= 5 && !foodData.find(item => item.id === id).selected) {
+      Alert.alert('알림', '최대 5개까지만 선택할 수 있습니다.');
+      return;
+    }
+
     const updatedData = foodData.map((item) => {
       if (item.id === id) {
         const isSelected = !item.selected;
@@ -72,6 +82,83 @@ const PreferedFood = () => {
     setFoodData(updatedData);
   };
 
+  const saveUnpreferredFoods = async () => {
+    if (selectedCount === 0) {
+      Alert.alert('알림', '최소 1개 이상의 음식을 선택해주세요.');
+      return;
+    }
+
+    if (selectedCount > 5) {
+      Alert.alert('알림', '최대 5개까지만 선택 가능합니다.');
+      return;
+    }
+
+    const selectedFoods = foodData.filter(item => item.selected).map(item => ({
+      food_name: `food${item.id}`
+    }));
+
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/save-unpreferred-foods/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          unpreferred_foods: selectedFoods
+        })
+      });
+
+      console.log('서버 응답 상태:', response.status);
+      const data = await response.json();
+      console.log('서버 응답 데이터:', data);
+
+      if (response.ok) {
+        try {
+          console.log('싫어하는 음식 저장 성공! 페이지 이동 시도');
+
+          if (Platform.OS === 'web') {
+            window.alert('싫어하는 음식이 저장되었습니다.');
+            router.push('/main');
+          } else {
+            Alert.alert(
+              '성공',
+              '싫어하는 음식이 저장되었습니다.',
+              [
+                {
+                  text: '확인',
+                  onPress: () => {
+                    console.log('main 페이지로 이동 시도');
+                    router.push('/main');
+                    console.log('이동 명령 실행 완료');
+                  },
+                },
+              ],
+              { cancelable: false }
+            );
+          }
+
+          // fallback
+          setTimeout(() => {
+            if (!router.canGoBack()) {
+              router.push('/main');
+            }
+          }, 1000);
+
+        } catch (routingError) {
+          console.error('페이지 이동 중 오류 발생:', routingError);
+          // 직접 라우팅 시도
+          router.push('/main');
+        }
+      } else {
+        console.log('저장 실패:', data.error);
+        Alert.alert('오류', data.error || '싫어하는 음식 저장에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('API 호출 에러:', error);
+      Alert.alert('오류', '서버 연결에 실패했습니다.');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>싫어하는 음식</Text>
@@ -79,6 +166,8 @@ const PreferedFood = () => {
         <TextInput
           style={styles.searchInput}
           placeholder="음식을 검색하세요"
+          value={searchText}
+          onChangeText={setSearchText}
         />
         <TouchableOpacity style={styles.searchIcon}>
           <Text>🔍</Text>
@@ -95,7 +184,7 @@ const PreferedFood = () => {
             onPress={() => toggleSelection(item.id)}
           >
             <Image
-              source={item.image} // getImageById 함수로 가져온 이미지
+              source={item.image}
               style={styles.foodImage}
               resizeMode="cover"
             />
@@ -109,13 +198,14 @@ const PreferedFood = () => {
         contentContainerStyle={styles.foodList}
       />
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button}>
+        <TouchableOpacity style={styles.button} onPress={() => router.back()}>
           <Text style={styles.buttonText}>뒤로가기</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button}>
-          <Link href="./main" style={styles.buttonText}>
-            다음
-          </Link>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={saveUnpreferredFoods}
+        >
+          <Text style={styles.buttonText}>다음</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -193,6 +283,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: '80%',
     marginTop: 20,
+    marginBottom: 20,
   },
   button: {
     backgroundColor: '#FFE9AF',
@@ -207,4 +298,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PreferedFood;
+export default UnPreferedFood;

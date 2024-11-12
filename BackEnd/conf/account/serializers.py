@@ -1,28 +1,33 @@
+# account/serializers.py
 from rest_framework import serializers
-from .models import UserProfile, UserAllergy
+from .models import UserAccount, UserInfo, Allergy, FoodCategory, PreferredFood, UnpreferredFood
 
-class UserAllergySerializer(serializers.ModelSerializer):
+class UserAccountSerializer(serializers.ModelSerializer):
     class Meta:
-        model = UserAllergy
-        fields = ['allergy_name']
+        model = UserAccount
+        fields = '__all__'
 
-class UserProfileSerializer(serializers.ModelSerializer):
-    allergies = UserAllergySerializer(many=True, read_only=True)
-    selected_allergies = serializers.ListField(write_only=True, required=False)
-
+class UserInfoSerializer(serializers.ModelSerializer):
     class Meta:
-        model = UserProfile
-        fields = ['has_allergies', 'is_vegan', 'gender', 
-                 'random_name_enabled', 'nickname', 'allergies', 
-                 'selected_allergies']
+        model = UserInfo
+        fields = '__all__'
 
-    def create(self, validated_data):
-        allergies_data = validated_data.pop('selected_allergies', [])
-        user_profile = UserProfile.objects.create(**validated_data)
-        
-        for allergy_name in allergies_data:
-            UserAllergy.objects.create(
-                user_profile=user_profile,
-                allergy_name=allergy_name
-            )
-        return user_profile
+class AllergySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Allergy
+        fields = '__all__'
+
+class FoodCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FoodCategory
+        fields = '__all__'
+
+class PreferredFoodSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PreferredFood
+        fields = '__all__'
+
+class UnpreferredFoodSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UnpreferredFood
+        fields = '__all__'

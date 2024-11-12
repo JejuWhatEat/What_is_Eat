@@ -1,5 +1,9 @@
 from django.contrib import admin
-from .models import UserProfile, UserAllergy  # Allergy를 UserAllergy로 수정
+from .models import *
 
-admin.site.register(UserProfile)
-admin.site.register(UserAllergy)
+admin.site.register(UserAccount)
+admin.site.register(UserInfo)
+admin.site.register(Allergy)
+admin.site.register(FoodCategory)
+admin.site.register(PreferredFood)
+admin.site.register(UnpreferredFood)
