@@ -1,8 +1,23 @@
+// UnPreferedFood.tsx
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, FlatList, Image, TouchableOpacity, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  FlatList,
+  Image,
+  TouchableOpacity,
+  Alert,
+  Platform
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Link } from 'expo-router';
+import { useRouter } from 'expo-router';
 
+// 최대 선택 가능한 음식 수를 상수로 정의
+const MAX_SELECTION = 10;
+
+// 이미지 ID에 따라 이미지를 반환하는 함수
 const getImageById = (id) => {
   switch (id) {
     case '1':
@@ -37,9 +52,11 @@ const getImageById = (id) => {
       return require('./images/image15.jpeg');
     case '16':
       return require('./images/image2.jpeg');
+
   }
 };
 
+// 초기 음식 데이터 생성
 const FOOD_DATA = Array.from({ length: 16 }, (_, index) => ({
   id: `${index + 1}`,
   image: getImageById(`${index + 1}`),
@@ -47,28 +64,112 @@ const FOOD_DATA = Array.from({ length: 16 }, (_, index) => ({
 }));
 
 const UnPreferedFood = () => {
+  const router = useRouter();
   const [selectedCount, setSelectedCount] = useState(0);
   const [foodData, setFoodData] = useState(FOOD_DATA);
+  const [searchText, setSearchText] = useState('');
 
+  // 음식 선택/해제 함수
   const toggleSelection = (id) => {
     const updatedData = foodData.map((item) => {
       if (item.id === id) {
         const isSelected = !item.selected;
-        
-        // Check if the selected count exceeds 10
-        if (isSelected && selectedCount >= 10) {
-          Alert.alert('알림', '최대 10개까지 선택할 수 있습니다.');
-          return item;
+        if (isSelected) {
+          if (selectedCount < MAX_SELECTION) {
+            setSelectedCount((prevCount) => prevCount + 1);
+          } else {
+            Alert.alert('알림', `최대 ${MAX_SELECTION}개까지 선택할 수 있습니다.`);
+            return item; // 선택 제한 초과 시 변경하지 않음
+          }
+        } else {
+          setSelectedCount((prevCount) => prevCount - 1);
         }
-
-        // Update selected count
-        setSelectedCount((prevCount) => isSelected ? prevCount + 1 : prevCount - 1);
         return { ...item, selected: isSelected };
       }
       return item;
     });
 
     setFoodData(updatedData);
+  };
+
+  // 선택된 음식 저장 함수
+  const saveUnpreferredFoods = async () => {
+    if (selectedCount === 0) {
+      Alert.alert('알림', '최소 1개 이상의 음식을 선택해주세요.');
+      return;
+    }
+
+    if (selectedCount > MAX_SELECTION) {
+      Alert.alert('알림', `최대 ${MAX_SELECTION}개까지만 선택 가능합니다.`);
+      return;
+    }
+
+    const selectedFoods = foodData
+      .filter(item => item.selected)
+      .map(item => ({
+        food_name: `food${item.id}`
+      }));
+
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/save-unpreferred-foods/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          unpreferred_foods: selectedFoods
+        })
+      });
+
+      console.log('서버 응답 상태:', response.status);
+      const data = await response.json();
+      console.log('서버 응답 데이터:', data);
+
+      if (response.ok) {
+        try {
+          console.log('싫어하는 음식 저장 성공! 페이지 이동 시도');
+
+          if (Platform.OS === 'web') {
+            window.alert('싫어하는 음식이 저장되었습니다.');
+            router.push('/main');
+          } else {
+            Alert.alert(
+              '성공',
+              '싫어하는 음식이 저장되었습니다.',
+              [
+                {
+                  text: '확인',
+                  onPress: () => {
+                    console.log('main 페이지로 이동 시도');
+                    router.push('/main');
+                    console.log('이동 명령 실행 완료');
+                  },
+                },
+              ],
+              { cancelable: false }
+            );
+          }
+
+          // 백업 라우팅
+          setTimeout(() => {
+            if (!router.canGoBack()) {
+              router.push('/main');
+            }
+          }, 1000);
+
+        } catch (routingError) {
+          console.error('페이지 이동 중 오류 발생:', routingError);
+          // 직접 라우팅 시도
+          router.push('/main');
+        }
+      } else {
+        console.log('저장 실패:', data.error);
+        Alert.alert('오류', data.error || '싫어하는 음식 저장에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('API 호출 에러:', error);
+      Alert.alert('오류', '서버 연결에 실패했습니다.');
+    }
   };
 
   return (
@@ -78,11 +179,14 @@ const UnPreferedFood = () => {
         <TextInput
           style={styles.searchInput}
           placeholder="음식을 검색하세요"
+          value={searchText}
+          onChangeText={setSearchText}
         />
         <TouchableOpacity style={styles.searchIcon}>
           <Text>🔍</Text>
         </TouchableOpacity>
-        <Text style={styles.counterText}>({selectedCount}/10)</Text>
+        {/* 카운터 텍스트를 10개로 업데이트 */}
+        <Text style={styles.counterText}>({selectedCount}/{MAX_SELECTION})</Text>
       </View>
       <FlatList
         data={foodData}
@@ -94,7 +198,7 @@ const UnPreferedFood = () => {
             onPress={() => toggleSelection(item.id)}
           >
             <Image
-              source={item.image} // getImageById 함수로 가져온 이미지
+              source={item.image}
               style={styles.foodImage}
               resizeMode="cover"
             />
@@ -108,19 +212,21 @@ const UnPreferedFood = () => {
         contentContainerStyle={styles.foodList}
       />
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button}>
+        <TouchableOpacity style={styles.button} onPress={() => router.back()}>
           <Text style={styles.buttonText}>뒤로가기</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button}>
-          <Link href="./main" style={styles.buttonText}>
-            다음
-          </Link>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={saveUnpreferredFoods}
+        >
+          <Text style={styles.buttonText}>다음</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 };
 
+// 스타일 시트
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -192,6 +298,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: '80%',
     marginTop: 20,
+    marginBottom: 20,
   },
   button: {
     backgroundColor: '#FFE9AF',

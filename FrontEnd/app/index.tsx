@@ -21,7 +21,7 @@ export default function Index() {
       <Link href="./SignUp/sign_up" style={styles.sign_up_button}>
         회원가입 시작하기
       </Link>
-      <Link href="./main" style={styles.sign_up_button}>
+      <Link href="./rst1" style={styles.sign_up_button}>
         Test
       </Link>
       <Button
