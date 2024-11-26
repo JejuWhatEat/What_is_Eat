@@ -43,6 +43,7 @@ export default function Index() {
           {
             text: '확인',
             onPress: () => router.replace('../Allergy')
+
           }
         ]);
       } else {

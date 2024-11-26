@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
  buttonText: {
    color: '#fff',
    fontSize: 16,
-   fontWeight: '400',
+   fontWeight: '600',
  },
  selectedButton: {
    opacity: 0.8,

@@ -71,6 +71,11 @@ const UnPreferedFood = () => {
 
   // 음식 선택/해제 함수
   const toggleSelection = (id) => {
+    if (selectedCount >= 5 && !foodData.find(item => item.id === id).selected) {
+      Alert.alert('알림', '최대 5개까지만 선택할 수 있습니다.');
+      return;
+    }
+
     const updatedData = foodData.map((item) => {
       if (item.id === id) {
         const isSelected = !item.selected;
@@ -92,23 +97,21 @@ const UnPreferedFood = () => {
     setFoodData(updatedData);
   };
 
-  // 선택된 음식 저장 함수
   const saveUnpreferredFoods = async () => {
     if (selectedCount === 0) {
       Alert.alert('알림', '최소 1개 이상의 음식을 선택해주세요.');
       return;
     }
 
-    if (selectedCount > MAX_SELECTION) {
-      Alert.alert('알림', `최대 ${MAX_SELECTION}개까지만 선택 가능합니다.`);
+    if (selectedCount > 5) {
+      Alert.alert('알림', '최대 5개까지만 선택 가능합니다.');
       return;
     }
 
-    const selectedFoods = foodData
-      .filter(item => item.selected)
-      .map(item => ({
-        food_name: `food${item.id}`
-      }));
+    const selectedFoods = foodData.filter(item => item.selected).map(item => ({
+      food_name: `food${item.id}`
+    }));
+
 
     try {
       const response = await fetch('http://127.0.0.1:8000/api/save-unpreferred-foods/', {
@@ -150,7 +153,9 @@ const UnPreferedFood = () => {
             );
           }
 
-          // 백업 라우팅
+
+          // fallback
+
           setTimeout(() => {
             if (!router.canGoBack()) {
               router.push('/main');
