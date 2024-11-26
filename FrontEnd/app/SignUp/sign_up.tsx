@@ -1,3 +1,4 @@
+
 // SignUp/sign_up.tsx
 import { Text, View, StyleSheet, TextInput, Button, TouchableOpacity, Alert } from 'react-native';
 import { Link, useRouter } from 'expo-router';
@@ -90,6 +91,7 @@ export default function Index() {
       <TouchableOpacity style={styles.button} onPress={handleSignUp}>
         <Text style={styles.buttonText}>확인</Text>
       </TouchableOpacity>
+
     </View>
   );
 };
@@ -102,6 +104,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sign_up_name: {
+
     color: '#000',
     fontSize: 30,
     textAlign: "center",
@@ -137,6 +140,7 @@ const styles = StyleSheet.create({
   input: {
     height: 40,
     width: 200,
+
     borderColor: 'gray',
     borderWidth: 1,
     borderRadius: 10,

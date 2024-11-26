@@ -1,4 +1,6 @@
+
 // UnPreferedFood.tsx
+
 import React, { useState } from 'react';
 import {
   View,
@@ -176,7 +178,6 @@ const UnPreferedFood = () => {
       Alert.alert('오류', '서버 연결에 실패했습니다.');
     }
   };
-
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>싫어하는 음식</Text>
@@ -184,12 +185,9 @@ const UnPreferedFood = () => {
         <TextInput
           style={styles.searchInput}
           placeholder="음식을 검색하세요"
-          value={searchText}
-          onChangeText={setSearchText}
         />
         <TouchableOpacity style={styles.searchIcon}>
           <Text>🔍</Text>
-        </TouchableOpacity>
         {/* 카운터 텍스트를 10개로 업데이트 */}
         <Text style={styles.counterText}>({selectedCount}/{MAX_SELECTION})</Text>
       </View>

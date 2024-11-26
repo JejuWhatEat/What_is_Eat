@@ -1,3 +1,4 @@
+
 // Allergic.tsx
 import React, { useState } from 'react';
 import {
@@ -116,12 +117,13 @@ const AllergySelection = () => {
    </SafeAreaView>
  );
 
+
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F4A79A',
+    backgroundColor: '#FEBE98',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -169,6 +171,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
+
   confirmationContainer: {
     marginTop: 20,
     alignItems: 'center',

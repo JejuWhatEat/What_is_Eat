@@ -1,3 +1,4 @@
+
 // PreferedFood.tsx
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, FlatList, Image, TouchableOpacity, Alert } from 'react-native';
@@ -296,3 +297,4 @@ const styles = StyleSheet.create({
 });
 
 export default PreferedFood;
+

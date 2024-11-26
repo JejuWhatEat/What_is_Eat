@@ -1,3 +1,4 @@
+
 // index.tsx
 import { Text, View, StyleSheet, TextInput, Button, TouchableOpacity, Alert, Platform } from 'react-native';
 import React, { useState } from 'react';

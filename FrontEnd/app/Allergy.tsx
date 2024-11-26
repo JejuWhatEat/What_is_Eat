@@ -1,3 +1,4 @@
+
 // Allergy.tsx
 import React, { useState } from 'react';
 import {
@@ -318,4 +319,4 @@ const styles = StyleSheet.create({
  },
 });
 
-export default Allergy;``
+export default Allergy;
