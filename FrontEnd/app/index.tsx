@@ -6,9 +6,11 @@ import Log_PassWord from './tabs/Log_PassWord';
 import { Link, useRouter } from 'expo-router';
 
 export default function Index() {
+
  const router = useRouter();
  const [email, setEmail] = useState('');
  const [password, setPassword] = useState('');
+
 
  const handleLogin = async () => {
    console.log('로그인 시도 - 입력값:', { email, password });

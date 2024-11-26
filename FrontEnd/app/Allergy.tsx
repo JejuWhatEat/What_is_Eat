@@ -217,9 +217,10 @@ const styles = StyleSheet.create({
    flex: 1,
    marginTop: 0,
    alignItems: 'center',
+   backgroundColor : '#FEBE98'
  },
  item: {
-   backgroundColor: '#9CABC2',
+   backgroundColor: '#F1B198',
    padding: 20,
    width: 300,
    marginHorizontal: 10,
@@ -291,7 +292,7 @@ const styles = StyleSheet.create({
    borderWidth: 1,
    borderColor: '#FFFFFF',
    padding: 10,
-   width: 200,
+   width: 170,
    borderRadius: 5,
    backgroundColor: '#FFFFFF',
    color: '#000000',

@@ -10,8 +10,10 @@ import {
  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { useRouter } from 'expo-router';
 import { setGlobalAllergies } from './Allergy';
+
 
 const ALLERGIES = [
  '갑각류', '복숭아', '땅콩', '달걀',
@@ -20,6 +22,7 @@ const ALLERGIES = [
 ];
 
 const AllergySelection = () => {
+
  const [selectedAllergies, setSelectedAllergies] = useState<string[]>([]);
  const router = useRouter();
 
@@ -43,6 +46,7 @@ const AllergySelection = () => {
          allergies: selectedAllergies
        })
      });
+
 
      if (response.ok) {
        // 글로벌 상태 업데이트
@@ -111,6 +115,7 @@ const AllergySelection = () => {
      </TouchableOpacity>
    </SafeAreaView>
  );
+
 };
 
 const styles = StyleSheet.create({
@@ -163,6 +168,20 @@ const styles = StyleSheet.create({
     color: '#FF0000',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  confirmationContainer: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  confirmationTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#4A4A4A',
+    marginBottom: 10,
+  },
+  selectedAllergies: {
+    fontSize: 16,
+    color: '#333',
   },
 });
 
