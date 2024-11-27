@@ -1,10 +1,25 @@
-
 // SignUp/sign_up.tsx
-import { Text, View, StyleSheet, TextInput, Button, TouchableOpacity, Alert } from 'react-native';
+import { 
+  Text, 
+  View, 
+  StyleSheet, 
+  TextInput, 
+  Button, 
+  TouchableOpacity, 
+  Alert,
+  Platform 
+} from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import Log_id from '../tabs/Log_id';
 import Log_PassWord from '../tabs/Log_PassWord'
 import React, { useState } from 'react';
+
+// API URL 상수 정의
+const API_URL = Platform.select({
+  ios: 'http://172.18.102.72:8000/api/signup/',      // expo IP 사용
+  android: 'http://172.18.102.72:8000/api/signup/',  // expo IP 사용
+  default: 'http://172.18.102.72:8000/api/signup/'   // expo IP 사용
+});
 
 export default function Index() {
   const router = useRouter();
@@ -12,19 +27,25 @@ export default function Index() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  // DB 저장을 위한 함수 추가
+  // DB 저장을 위한 함수
   const handleSignUp = async () => {
+    // 입력값 검증
+    if (!email || !password || !confirmPassword) {
+      Alert.alert('오류', '모든 필드를 입력해주세요.');
+      return;
+    }
+
     // 비밀번호 확인
     if (password !== confirmPassword) {
-      console.log("비밀번호 불일치");
       Alert.alert('오류', '비밀번호가 일치하지 않습니다.');
       return;
     }
 
     try {
       console.log("회원가입 시도:", { email, password });
+      console.log("요청 URL:", API_URL);
 
-      const response = await fetch('http://127.0.0.1:8000/api/signup/', {
+      const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -35,25 +56,38 @@ export default function Index() {
         })
       });
 
+      console.log("응답 상태:", response.status);
+      
       const data = await response.json();
-      console.log("서버 응답:", data);  // 서버 응답 출력
+      console.log("서버 응답:", data);
 
       if (response.ok) {
         console.log("회원가입 성공!");
-        Alert.alert('성공', '회원가입이 완료되었습니다.', [
-          {
-            text: '확인',
-            onPress: () => router.replace('../Allergy')
-
-          }
-        ]);
+        Alert.alert(
+          '성공', 
+          '회원가입이 완료되었습니다.', 
+          [
+            {
+              text: '확인',
+              onPress: () => router.replace('../Allergy')
+            }
+          ]
+        );
       } else {
-        console.log("회원가입 실패:", data.error);
-        Alert.alert('오류', data.error || '회원가입에 실패했습니다.');
+        const errorMessage = data.error || '회원가입에 실패했습니다.';
+        console.log("회원가입 실패:", errorMessage);
+        Alert.alert('오류', errorMessage);
       }
     } catch (error) {
       console.error("서버 연결 오류:", error);
-      Alert.alert('오류', '서버 연결에 실패했습니다.');
+      Alert.alert(
+        '오류', 
+        Platform.select({
+          ios: 'iOS 서버 연결에 실패했습니다. Xcode 시뮬레이터가 실행 중인지 확인해주세요.',
+          android: 'Android 서버 연결에 실패했습니다. 에뮬레이터가 실행 중인지 확인해주세요.',
+          default: '서버 연결에 실패했습니다.'
+        })
+      );
     }
   };
 
@@ -63,7 +97,7 @@ export default function Index() {
 
       <Text style={styles.Logcontainer}>아이디</Text>
       <Log_id
-        value={email}  // props 추가
+        value={email}
         onChangeText={(text) => {
           console.log("이메일 입력:", text);
           setEmail(text);
@@ -72,7 +106,7 @@ export default function Index() {
 
       <Text>비밀번호</Text>
       <Log_PassWord
-        value={password}  // props 추가
+        value={password}
         onChangeText={(text) => {
           console.log("비밀번호 입력:", text);
           setPassword(text);
@@ -81,7 +115,7 @@ export default function Index() {
 
       <Text>비밀번호 확인</Text>
       <Log_PassWord
-        value={confirmPassword}  // props 추가
+        value={confirmPassword}
         onChangeText={(text) => {
           console.log("비밀번호 확인 입력:", text);
           setConfirmPassword(text);
@@ -91,10 +125,9 @@ export default function Index() {
       <TouchableOpacity style={styles.button} onPress={handleSignUp}>
         <Text style={styles.buttonText}>확인</Text>
       </TouchableOpacity>
-
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -104,7 +137,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sign_up_name: {
-
     color: '#000',
     fontSize: 30,
     textAlign: "center",
@@ -140,7 +172,6 @@ const styles = StyleSheet.create({
   input: {
     height: 40,
     width: 200,
-
     borderColor: 'gray',
     borderWidth: 1,
     borderRadius: 10,

@@ -6,18 +6,24 @@ import Log_id from './tabs/Log_id';
 import Log_PassWord from './tabs/Log_PassWord';
 import { Link, useRouter } from 'expo-router';
 
-export default function Index() {
+// API URL 상수 정의
+const API_URL = Platform.select({
+   ios: 'http://127.0.0.1:8000/api/login/',
+   android: 'http://172.18.102.72:8000/api/login/',
+   default: 'http://127.0.0.1:8000/api/login/'
+});
 
+export default function Index() {
  const router = useRouter();
  const [email, setEmail] = useState('');
  const [password, setPassword] = useState('');
-
 
  const handleLogin = async () => {
    console.log('로그인 시도 - 입력값:', { email, password });
 
    try {
-     const response = await fetch('http://127.0.0.1:8000/api/login/', {
+     console.log('API 요청 URL:', API_URL);
+     const response = await fetch(API_URL, {
        method: 'POST',
        headers: {
          'Content-Type': 'application/json',
@@ -57,33 +63,29 @@ export default function Index() {
            );
          }
 
-         // Alert가 작동하지 않을 경우를 대비한 fallback
+         // fallback
          setTimeout(() => {
-           if (!router.canGoBack()) {  // 페이지 이동이 아직 안 된 경우
+           if (!router.canGoBack()) {
              router.push('/Allergy');
            }
          }, 1000);
 
        } catch (routingError) {
          console.error('페이지 이동 중 오류 발생:', routingError);
-         // 직접 라우팅 시도
-         router.push('/Allergic');
+         router.push('/Allergy');
        }
      } else {
        console.log('로그인 실패:', data.error);
-       try {
-         Alert.alert('오류', data.error || '로그인에 실패했습니다.');
-       } catch (alertError) {
-         console.error('알림 표시 실패:', alertError);
-       }
+       Alert.alert('오류', data.error || '로그인에 실패했습니다.');
      }
    } catch (error) {
      console.error('API 호출 에러:', error);
-     try {
-       Alert.alert('오류', '서버 연결에 실패했습니다.');
-     } catch (alertError) {
-       console.error('알림 표시 실패:', alertError);
-     }
+     Alert.alert(
+       '오류', 
+       Platform.OS === 'ios' 
+         ? 'iOS 서버 연결에 실패했습니다.' 
+         : 'Android 서버 연결에 실패했습니다.'
+     );
    }
  };
 
