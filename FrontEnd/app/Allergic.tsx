@@ -1,93 +1,105 @@
-
 // Allergic.tsx
 import React, { useState } from 'react';
 import {
- View,
- Text,
- StyleSheet,
- TouchableOpacity,
- ScrollView,
- Alert,
- Platform
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
 import { useRouter } from 'expo-router';
 import { setGlobalAllergies } from './Allergy';
 
+// API URL 상수 정의
+const API_URL = Platform.select({
+    ios: 'http://127.0.0.1:8000/api/save-allergies/',
+    android: 'http://172.18.102.72:8000/api/save-allergies/',
+    default: 'http://127.0.0.1:8000/api/save-allergies/'
+});
 
 const ALLERGIES = [
- '갑각류', '복숭아', '땅콩', '달걀',
- '견과', '밀', '생선', '우유',
- '조개', '콩', '호두', '잣'
+  '갑각류', '복숭아', '땅콩', '달걀',
+  '견과', '밀', '생선', '우유',
+  '조개', '콩', '호두', '잣'
 ];
 
 const AllergySelection = () => {
+  const [selectedAllergies, setSelectedAllergies] = useState<string[]>([]);
+  const router = useRouter();
 
- const [selectedAllergies, setSelectedAllergies] = useState<string[]>([]);
- const router = useRouter();
+  const toggleAllergy = (allergy: string) => {
+    if (selectedAllergies.includes(allergy)) {
+      setSelectedAllergies(selectedAllergies.filter(a => a !== allergy));
+    } else {
+      setSelectedAllergies([...selectedAllergies, allergy]);
+    }
+  };
 
- const toggleAllergy = (allergy: string) => {
-   if (selectedAllergies.includes(allergy)) {
-     setSelectedAllergies(selectedAllergies.filter(a => a !== allergy));
-   } else {
-     setSelectedAllergies([...selectedAllergies, allergy]);
-   }
- };
+  const handleConfirm = async () => {
+    try {
+      console.log('API 요청 URL:', API_URL);
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          allergies: selectedAllergies
+        })
+      });
 
- const handleConfirm = async () => {
-   try {
-     // 알러지 정보만 먼저 서버에 저장
-     const response = await fetch('http://127.0.0.1:8000/api/save-allergies/', {
-       method: 'POST',
-       headers: {
-         'Content-Type': 'application/json',
-       },
-       body: JSON.stringify({
-         allergies: selectedAllergies
-       })
-     });
+      console.log('서버 응답 상태:', response.status);
+      const data = await response.json();
+      console.log('서버 응답 데이터:', data);
 
+      if (response.ok) {
+        setGlobalAllergies(selectedAllergies);
+        
+        if (Platform.OS === 'web') {
+          window.alert('알러지 정보가 저장되었습니다.');
+          router.back();
+        } else {
+          Alert.alert(
+            '성공',
+            '알러지 정보가 저장되었습니다.',
+            [
+              {
+                text: '확인',
+                onPress: () => {
+                  console.log('Allergy 페이지로 돌아가기 시도');
+                  router.back();
+                }
+              }
+            ],
+            { cancelable: false }
+          );
+        }
 
-     if (response.ok) {
-       // 글로벌 상태 업데이트
-       setGlobalAllergies(selectedAllergies);
-       
-       if (Platform.OS === 'web') {
-         window.alert('알러지 정보가 저장되었습니다.');
-         router.back();
-       } else {
-         Alert.alert(
-           '성공',
-           '알러지 정보가 저장되었습니다.',
-           [
-             {
-               text: '확인',
-               onPress: () => {
-                 console.log('Allergy 페이지로 돌아가기 시도');
-                 router.back();
-               }
-             }
-           ],
-           { cancelable: false }
-         );
-       }
+        setTimeout(() => {
+          if (!router.canGoBack()) {
+            router.back();
+          }
+        }, 1000);
 
-       // fallback
-       setTimeout(() => {
-         if (!router.canGoBack()) {
-           router.back();
-         }
-       }, 1000);
+      } else {
+        console.log('저장 실패:', data.error);
+        Alert.alert('오류', data.error || '알러지 정보 저장에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('API 호출 에러:', error);
+      Alert.alert(
+        '오류', 
+        Platform.OS === 'ios' 
+          ? 'iOS 서버 연결에 실패했습니다.' 
+          : 'Android 서버 연결에 실패했습니다.'
+      );
+    }
+  };
 
-     } else {
-       throw new Error('서버 응답 오류');
-     }
-   } catch (error) {
-     console.error('API 오류:', error);
-     Alert.alert('오류', '알러지 정보 저장에 실패했습니다.');
-   }
- };
+  // ... return 부분은 그대로 유지 ...
 
  return (
    <SafeAreaView style={styles.container}>

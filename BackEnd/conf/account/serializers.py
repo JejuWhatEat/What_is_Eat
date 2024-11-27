@@ -1,6 +1,6 @@
-# account/serializers.py
+# serializers.py
 from rest_framework import serializers
-from .models import UserAccount, UserInfo, Allergy, FoodCategory, PreferredFood, UnpreferredFood
+from .models import UserAccount, UserInfo, Allergy, FoodCategory, PreferredFood, UnpreferredFood, FoodImage
 
 class UserAccountSerializer(serializers.ModelSerializer):
     class Meta:
@@ -31,3 +31,16 @@ class UnpreferredFoodSerializer(serializers.ModelSerializer):
     class Meta:
         model = UnpreferredFood
         fields = '__all__'
+
+class FoodImageSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FoodImage
+        fields = ['id', 'food_name', 'image_url', 'food_type']
+
+    def get_image_url(self, obj):
+        request = self.context.get('request')
+        if obj.image and hasattr(obj.image, 'url'):
+            return request.build_absolute_uri(obj.image.url)
+        return None

@@ -54,17 +54,57 @@ class PreferredFood(models.Model):
     allergy = models.ForeignKey(Allergy, on_delete=models.CASCADE, null=True, blank=True)
     user_name = models.CharField(max_length=50)
     food_name = models.CharField(max_length=100)
+    food_number = models.IntegerField(null=True)  # 음식 고유 번호 추가
     category = models.ForeignKey(FoodCategory, on_delete=models.SET_NULL, null=True)
 
     def __str__(self):
         return f"{self.user_name} - {self.food_name}"
 
+# models.py의 UnpreferredFood 모델 수정
 class UnpreferredFood(models.Model):
     user_info = models.ForeignKey(UserInfo, on_delete=models.CASCADE, related_name='unpreferred_foods')
     allergy = models.ForeignKey(Allergy, on_delete=models.CASCADE, null=True, blank=True)
     user_name = models.CharField(max_length=50)
     food_name = models.CharField(max_length=100)
-    category = models.ForeignKey(FoodCategory, on_delete=models.SET_NULL, null=True)
+    food_number = models.IntegerField(null=True)  # 추가
+    category = models.ForeignKey(FoodCategory, on_delete=models.SET_NULL, null=True)  # 추가
 
     def __str__(self):
         return f"{self.user_name} - {self.food_name}"
+    
+
+class FoodImage(models.Model):
+    FOOD_TYPES = [
+        ('preferred', '선호 음식'),
+        ('unpreferred', '비선호 음식'),
+    ]
+    
+    food_name = models.CharField(max_length=100)
+    image = models.ImageField(upload_to='food_images/')
+    food_type = models.CharField(max_length=20, choices=FOOD_TYPES)
+    category = models.ForeignKey(FoodCategory, on_delete=models.SET_NULL, null=True)
+    
+    class Meta:
+        db_table = 'food_images'
+
+    def __str__(self):
+        return f"{self.food_name} ({self.get_food_type_display()})"
+    
+
+
+# account/models.py에 추가
+class Food(models.Model):
+    CATEGORY_CHOICES = [
+        (0, '분식'),
+        (1, '양식'),
+        (2, '중식'),
+        (3, '한식'),
+        (4, '일식'),
+    ]
+    
+    name = models.CharField(max_length=100)
+    category = models.IntegerField(choices=CATEGORY_CHOICES)
+    image_number = models.IntegerField()  # 1부터 161까지의 번호
+
+    def __str__(self):
+        return f"{self.name} ({self.get_category_display()})"

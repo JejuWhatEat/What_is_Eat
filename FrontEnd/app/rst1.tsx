@@ -1,7 +1,7 @@
 // app/RestaurantDetail.tsx
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, ScrollView } from 'react-native';
-//import { useRouter, useSearchParams } from 'expo-router';
+import { useRouter, useSearchParams } from 'expo-router';
 
 type RestaurantDetails = {
   name: string;
