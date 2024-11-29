@@ -2,7 +2,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
-from .models import UserInfo, PreferredFood, Allergy, UserAccount, UnpreferredFood, Food  # Food 추가
+from .models import UserInfo, PreferredFood, Allergy, UserAccount, UnpreferredFood, Food
 from django.contrib.auth.hashers import make_password, check_password
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
@@ -11,8 +11,8 @@ import json
 import os
 from django.conf import settings
 import logging
-from .models import UserInfo, PreferredFood, UserAccount, FoodCategory  # FoodCategory 추가
-from .utils import FOOD_DATA as food_data  # food_data import 추가
+from .models import UserInfo, PreferredFood, UserAccount, FoodCategory
+from .utils import FOOD_DATA  # food_data에서 FOOD_DATA로 변경
 
 logger = logging.getLogger(__name__)
 
@@ -168,178 +168,178 @@ def save_profile(request):
             'message': str(e)
         }, status=500)
 
-@api_view(['POST'])
-def save_preferred_foods(request):
+@api_view(['GET'])
+def get_food_images(request):
+    """음식 이미지와 정보를 반환하는 뷰"""
     try:
-        preferred_foods = request.data.get('preferred_foods', [])
-        
-        try:
-            user_account = UserAccount.objects.first()
-            if not user_account:
-                return Response(
-                    {'error': '사용자 계정을 찾을 수 없습니다.'},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-
-            user_info = UserInfo.objects.get(user_account=user_account)
-            if not user_info:
-                return Response(
-                    {'error': '사용자 정보를 찾을 수 없습니다.'},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-
-            # 기존 선호 음식 삭제
-            PreferredFood.objects.filter(user_info=user_info).delete()
-            
-            # 새로운 선호 음식 저장
-            for food in preferred_foods:
-                food_name = food['food_name']
-                if food_name in food_data:
-                    data = food_data[food_name]
-                    category = FoodCategory.objects.get(category_id=data["category"])
-                    
-                    PreferredFood.objects.create(
-                        user_info=user_info,
-                        user_name=user_info.user_name,
-                        food_name=food_name,
-                        food_number=data["number"],
-                        category=category
-                    )
-                    print(f"저장된 음식: {food_name}, 번호: {data['number']}, 카테고리: {data['category']}")
-                else:
-                    print(f"음식을 찾을 수 없음: {food_name}")
-                
-            return Response({
-                'message': '선호하는 음식이 저장되었습니다.',
-                'preferred_foods': preferred_foods
-            }, status=status.HTTP_200_OK)
-
-        except UserInfo.DoesNotExist:
-            return Response(
-                {'error': '사용자 정보를 찾을 수 없습니다.'},
-                status=status.HTTP_404_NOT_FOUND
+        food_list = []
+        # 142번까지만 조회하도록 수정
+        for number in range(1, 143):
+            food_info = next(
+                ({"name": name, "data": data} for name, data in FOOD_DATA.items() 
+                if data["number"] == number),
+                None
             )
             
-    except Exception as e:
-        print(f"에러 발생: {str(e)}")
+            if food_info:
+                # 이미지 파일 존재 여부 확인
+                image_path = f'food_images/image{number}.jpeg.jpg'
+                full_path = os.path.join(settings.MEDIA_ROOT, image_path)
+                
+                # 이미지가 실제로 존재하는 경우에만 추가
+                if os.path.exists(full_path):
+                    # BASE_URL 대신 request.build_absolute_uri 사용
+                    image_url = request.build_absolute_uri(f'/media/food_images/image{number}.jpeg.jpg')
+                    
+                    food_list.append({
+                        'id': number,
+                        'food_name': food_info["name"],
+                        'category_id': food_info["data"]["category"],
+                        'image_url': image_url,
+                        'category_name': dict(Food.CATEGORY_CHOICES)[food_info["data"]["category"]]
+                    })
+                    print(f"Added food: {food_info['name']} with image: {image_url}")
+
+        print(f"Successfully loaded {len(food_list)} foods with images")
         return Response({
-            'error': str(e)
+            'status': 'success',
+            'total_count': len(food_list),
+            'images': food_list
+        })
+
+    except Exception as e:
+        print(f"Error in get_food_images: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+        return Response({
+            'status': 'error',
+            'message': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
 def save_unpreferred_foods(request):
+    """비선호 음식을 저장하는 뷰"""
+    print("=== save_unpreferred_foods 호출됨 ===")
+    print("Request Data:", request.data)
+    
     try:
         unpreferred_foods = request.data.get('unpreferred_foods', [])
+        print("Unpreferred Foods:", unpreferred_foods)
+
+        user_account = UserAccount.objects.first()
+        if not user_account:
+            return Response({'error': '사용자 계정을 찾을 수 없습니다.'}, status=status.HTTP_404_NOT_FOUND)
+
+        user_info = UserInfo.objects.get(user_account=user_account)
         
-        try:
-            user_account = UserAccount.objects.first()
-            if not user_account:
-                return Response(
-                    {'error': '사용자 계정을 찾을 수 없습니다.'},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-
-            user_info = UserInfo.objects.get(user_account=user_account)
-            if not user_info:
-                return Response(
-                    {'error': '사용자 정보를 찾을 수 없습니다.'},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-
-            # 기존 비선호 음식 삭제
-            UnpreferredFood.objects.filter(user_info=user_info).delete()
+        UnpreferredFood.objects.filter(user_info=user_info).delete()
+        
+        saved_foods = []
+        for food_item in unpreferred_foods:
+            food_name = food_item['food_name']
+            print(f"Processing food: {food_name}")
             
-            # 새로운 비선호 음식 저장
-            for food in unpreferred_foods:
-                food_name = food['food_name']
-                if food_name in food_data:
-                    data = food_data[food_name]
-                    category = FoodCategory.objects.get(category_id=data["category"])
-                    
-                    UnpreferredFood.objects.create(
+            food_info = next(
+                ({"name": name, "data": data} for name, data in FOOD_DATA.items() 
+                if name == food_name),
+                None
+            )
+            
+            if food_info:
+                print(f"Found food info: {food_info}")
+                try:
+                    new_food = UnpreferredFood.objects.create(
                         user_info=user_info,
                         user_name=user_info.user_name,
                         food_name=food_name,
-                        food_number=data["number"],
-                        category=category
+                        food_number=food_info["data"]["number"],
+                        category_id=food_info["data"]["category"]
                     )
-                    print(f"저장된 음식: {food_name}, 번호: {data['number']}, 카테고리: {data['category']}")
-                else:
-                    print(f"음식을 찾을 수 없음: {food_name}")
-                
-            return Response({
-                'message': '싫어하는 음식이 저장되었습니다.',
-                'unpreferred_foods': unpreferred_foods
-            }, status=status.HTTP_200_OK)
-
-        except UserInfo.DoesNotExist:
-            return Response(
-                {'error': '사용자 정보를 찾을 수 없습니다.'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-            
-    except Exception as e:
-        print(f"에러 발생: {str(e)}")
+                    saved_foods.append(food_name)
+                    print(f"Saved food: {food_name}")
+                except Exception as e:
+                    print(f"Error saving {food_name}: {str(e)}")
+            else:
+                print(f"Could not find food info for: {food_name}")
+        
+        print(f"Total foods saved: {len(saved_foods)}")
         return Response({
-            'error': str(e)
+            'status': 'success',
+            'message': '싫어하는 음식이 저장되었습니다.',
+            'saved_foods': saved_foods
+        })
+
+    except Exception as e:
+        print(f"Error in save_unpreferred_foods: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+        return Response({
+            'status': 'error',
+            'message': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-@api_view(['GET'])
-def get_food_images(request):
-   try:
-       food_type = request.query_params.get('type', 'preferred')
-       
-       # 디버깅을 위한 로그
-       print(f"요청된 food_type: {food_type}")
-       
-       # Food 모델에서 모든 음식 데이터 가져오기
-       foods = Food.objects.all()
-       print(f"전체 음식 데이터 수: {foods.count()}")
+@api_view(['POST'])
+def save_preferred_foods(request):
+    """선호 음식을 저장하는 뷰"""
+    print("=== save_preferred_foods 호출됨 ===")
+    print("Request Data:", request.data)
+    
+    try:
+        # 프론트엔드에서 보내는 형식으로 데이터 받기
+        preferred_foods = request.data.get('preferred_foods', [])
+        print("Preferred Foods:", preferred_foods)
 
-       # 이미지 디렉토리 확인
-       images_dir = os.path.join(settings.MEDIA_ROOT, 'food_images')
-       print(f"이미지 디렉토리: {images_dir}")
-       print(f"디렉토리 존재 여부: {os.path.exists(images_dir)}")
-       if os.path.exists(images_dir):
-           print(f"디렉토리 내용: {os.listdir(images_dir)}")
+        user_account = UserAccount.objects.first()
+        if not user_account:
+            return Response({'error': '사용자 계정을 찾을 수 없습니다.'}, status=status.HTTP_404_NOT_FOUND)
 
-       base_url = request.build_absolute_uri(settings.MEDIA_URL)
-       print(f"기본 URL: {base_url}")
+        user_info = UserInfo.objects.get(user_account=user_account)
+        
+        # 기존 선호 음식 삭제
+        PreferredFood.objects.filter(user_info=user_info).delete()
+        
+        saved_foods = []
+        for food_item in preferred_foods:
+            food_name = food_item['food_name']
+            print(f"Processing food: {food_name}")
+            
+            # FOOD_DATA에서 해당 음식 정보 찾기
+            food_info = next(
+                ({"name": name, "data": data} for name, data in FOOD_DATA.items() 
+                if name == food_name),
+                None
+            )
+            
+            if food_info:
+                print(f"Found food info: {food_info}")
+                try:
+                    new_food = PreferredFood.objects.create(
+                        user_info=user_info,
+                        user_name=user_info.user_name,
+                        food_name=food_name,
+                        food_number=food_info["data"]["number"],
+                        category_id=food_info["data"]["category"]
+                    )
+                    saved_foods.append(food_name)
+                    print(f"Saved food: {food_name}")
+                except Exception as e:
+                    print(f"Error saving {food_name}: {str(e)}")
+            else:
+                print(f"Could not find food info for: {food_name}")
+        
+        print(f"Total foods saved: {len(saved_foods)}")
+        return Response({
+            'status': 'success',
+            'message': '선호하는 음식이 저장되었습니다.',
+            'saved_foods': saved_foods
+        })
 
-       food_list = []
-       for food in foods:
-           image_path = f'food_images/image{food.image_number}.jpeg'
-           full_path = os.path.join(settings.MEDIA_ROOT, image_path)
-           
-           print(f"처리 중인 음식: {food.name}")
-           print(f"이미지 번호: {food.image_number}")
-           print(f"카테고리: {food.get_category_display()}")
-           print(f"이미지 경로: {full_path}")
-           print(f"이미지 존재 여부: {os.path.exists(full_path)}")
+    except Exception as e:
+        print(f"Error in save_preferred_foods: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+        return Response({
+            'status': 'error',
+            'message': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-           # 이미지가 없어도 데이터는 전송 (개발 중에는 이미지가 없어도 됨)
-           food_list.append({
-               'id': food.image_number,
-               'food_name': food.name,
-               'category_id': food.category,
-               'image_url': f'{base_url}{image_path}',
-               'category_name': food.get_category_display()
-           })
-
-       print(f"전체 응답 데이터 수: {len(food_list)}")
-
-       return Response({
-           'status': 'success',
-           'total_count': len(food_list),
-           'images': food_list
-       })
-
-   except Exception as e:
-       print(f"에러 발생: {str(e)}")
-       import traceback
-       print(f"상세 에러: {traceback.format_exc()}")
-       return Response({
-           'status': 'error',
-           'message': str(e),
-           'detail': traceback.format_exc()
-       }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

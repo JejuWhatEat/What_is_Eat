@@ -108,3 +108,20 @@ class Food(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.get_category_display()})"
+    
+class Restaurant(models.Model):
+    name = models.CharField(max_length=255)  # 음식점 이름
+    address = models.CharField(max_length=500)  # 음식점 주소
+
+    def __str__(self):
+        return self.name
+
+class NutritionalInformation(models.Model):
+    food_name = models.CharField(max_length=100)
+    calories = models.IntegerField()
+    carbohydrates = models.FloatField()
+    protein = models.FloatField()
+    fat = models.FloatField()
+
+
+

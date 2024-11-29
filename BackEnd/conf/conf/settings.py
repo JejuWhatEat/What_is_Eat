@@ -28,6 +28,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+# settings.py
+BASE_URL = 'http://172.18.102.72:8000'  # 안드로이드용
+# BASE_URL = 'http://127.0.0.1:8000'  # iOS용
 
 # Application definition
 
