@@ -1,261 +1,315 @@
 import React, { useRef, useState, useEffect } from 'react';
 import {
- ScrollView,
- Text,
- StyleSheet,
- View,
- ImageBackground,
- Animated,
- useWindowDimensions,
- TouchableWithoutFeedback,
- FlatList,
- TouchableOpacity,
- Alert,
- Platform,
- ActivityIndicator,
+  ScrollView,
+  Text,
+  StyleSheet,
+  View,
+  ImageBackground,
+  Animated,
+  useWindowDimensions,
+  TouchableWithoutFeedback,
+  TouchableOpacity,
+  Alert,
+  Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 
-// API URL 상수 정의
+// API URL constants
 const BASE_URL = Platform.select({
   ios: 'http://127.0.0.1:8000',
   android: 'http://172.18.102.72:8000',
-  default: 'http://127.0.0.1:8000'
+  default: 'http://127.0.0.1:8000',
 });
 
 const IMAGES_URL = `${BASE_URL}/api/food-images/`;
 
-// 오늘과 어제의 인기 음식 데이터
+// Popular food data for today and yesterday
 const popularToday = '1. 돈까스\n2. 비빔밥\n3. 냉면';
 const popularYesterday = '1. 마라탕\n2. 짬뽕\n3. 순대국밥';
 
-// 추천 식당 데이터
+// Restaurant recommendations data
 const restaurantRecommendations = {
- 0: ['레스토랑 A', '레스토랑 B', '레스토랑 C'],
- 1: ['레스토랑 D', '레스토랑 E', '레스토랑 F'],
- 2: ['레스토랑 G', '레스토랑 H', '레스토랑 I'],
- 3: ['레스토랑 J', '레스토랑 K', '레스토랑 L'],
- 4: ['레스토랑 M', '레스토랑 N', '레스토랑 O'],
+  0: ['레스토랑 A', '레스토랑 B', '레스토랑 C'],
+  1: ['레스토랑 D', '레스토랑 E', '레스토랑 F'],
+  2: ['레스토랑 G', '레스토랑 H', '레스토랑 I'],
+  3: ['레스토랑 J', '레스토랑 K', '레스토랑 L'],
+  4: ['레스토랑 M', '레스토랑 N', '레스토랑 O'],
 };
 
-// FlipCard 컴포넌트
+// FlipCard component
 const FlipCard = ({ imageUrl, width, height, onFlip, onUnflip, index }) => {
- const animatedValue = useRef(new Animated.Value(0)).current;
- const [flipped, setFlipped] = useState(false);
+  const animatedValue = useRef(new Animated.Value(0)).current;
+  const [flipped, setFlipped] = useState(false);
 
- const frontInterpolate = animatedValue.interpolate({
-   inputRange: [0, 180],
-   outputRange: ['0deg', '180deg'],
- });
+  const frontInterpolate = animatedValue.interpolate({
+    inputRange: [0, 180],
+    outputRange: ['0deg', '180deg'],
+  });
 
- const backInterpolate = animatedValue.interpolate({
-   inputRange: [0, 180],
-   outputRange: ['180deg', '360deg'],
- });
+  const backInterpolate = animatedValue.interpolate({
+    inputRange: [0, 180],
+    outputRange: ['180deg', '360deg'],
+  });
 
- const flipCard = () => {
-   if (flipped) {
-     Animated.spring(animatedValue, {
-       toValue: 0,
-       friction: 8,
-       tension: 10,
-       useNativeDriver: true,
-     }).start(() => {
-       setFlipped(false);
-       onUnflip(index);
-     });
-   } else {
-     Animated.spring(animatedValue, {
-       toValue: 180,
-       friction: 8,
-       tension: 10,
-       useNativeDriver: true,
-     }).start(() => {
-       setFlipped(true);
-       onFlip(index);
-     });
-   }
- };
+  const flipCard = () => {
+    if (flipped) {
+      Animated.spring(animatedValue, {
+        toValue: 0,
+        friction: 8,
+        tension: 10,
+        useNativeDriver: true,
+      }).start(() => {
+        setFlipped(false);
+        onUnflip(index);
+      });
+    } else {
+      Animated.spring(animatedValue, {
+        toValue: 180,
+        friction: 8,
+        tension: 10,
+        useNativeDriver: true,
+      }).start(() => {
+        setFlipped(true);
+        onFlip(index);
+      });
+    }
+  };
 
- return (
-   <TouchableWithoutFeedback onPress={flipCard}>
-     <View style={{ width, height }}>
-       <Animated.View
-         style={[
-           styles.flipCard,
-           {
-             transform: [{ rotateY: frontInterpolate }],
-             width,
-             height,
-             position: 'absolute',
-           },
-         ]}
-       >
-         <ImageBackground source={{ uri: imageUrl }} style={styles.card}>
-         </ImageBackground>
-       </Animated.View>
+  return (
+    <TouchableWithoutFeedback onPress={flipCard}>
+      {/* Adjusted marginHorizontal and width to center the card */}
+      <View style={{ width, height, marginHorizontal: 10 }}>
+        <Animated.View
+          style={[
+            styles.flipCard,
+            {
+              transform: [{ rotateY: frontInterpolate }],
+              width: '100%',
+              height: '100%',
+              position: 'absolute',
+            },
+          ]}
+        >
+          <ImageBackground source={{ uri: imageUrl }} style={styles.card} />
+        </Animated.View>
 
-       <Animated.View
-         style={[
-           styles.flipCard,
-           styles.flipCardBack,
-           {
-             transform: [{ rotateY: backInterpolate }],
-             width,
-             height,
-             position: 'absolute',
-           },
-         ]}
-       >
-         <View style={styles.backSide}>
-           <Text style={styles.backText}>추천 식당을 확인하세요!</Text>
-         </View>
-       </Animated.View>
-     </View>
-   </TouchableWithoutFeedback>
- );
+        <Animated.View
+          style={[
+            styles.flipCard,
+            styles.flipCardBack,
+            {
+              transform: [{ rotateY: backInterpolate }],
+              width: '100%',
+              height: '100%',
+              position: 'absolute',
+            },
+          ]}
+        >
+          <View style={styles.backSide}>
+            <Text style={styles.backText}>영양 성분 추가 예정</Text>
+          </View>
+        </Animated.View>
+      </View>
+    </TouchableWithoutFeedback>
+  );
 };
 
 const Main = () => {
- const scrollX = useRef(new Animated.Value(0)).current;
- const { width: windowWidth } = useWindowDimensions();
- const [selectedImageIndex, setSelectedImageIndex] = useState(null);
- const [images, setImages] = useState([]);
- const [isLoading, setIsLoading] = useState(true);
+  const scrollX = useRef(new Animated.Value(0)).current;
+  const { width: windowWidth } = useWindowDimensions();
 
- useEffect(() => {
-   fetchFoodImages();
- }, []);
+  const [images, setImages] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
- const fetchFoodImages = async () => {
-   try {
-     setIsLoading(true);
-     console.log('이미지 요청 URL:', `${IMAGES_URL}?type=preferred`);
-     
-     const response = await fetch(`${IMAGES_URL}?type=preferred`);
-     const data = await response.json();
-     
-     console.log('서버 응답:', data);
+  // Added currentIndex to track the current active image index
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const lastActiveTime = useRef(Date.now());
+  const accumulatedTimes = useRef({});
 
-     if (data.status === 'success') {
-       const selectedImages = data.images
-         .slice(0, 5)
-         .map(img => img.image_url);
-       setImages(selectedImages);
-     } else {
-       console.error('이미지 로드 실패:', data.message);
-       Alert.alert('오류', '이미지를 불러오는데 실패했습니다.');
-     }
-   } catch (error) {
-     console.error('이미지 로드 중 에러:', error);
-     Alert.alert('오류', '서버 연결에 실패했습니다.');
-   } finally {
-     setIsLoading(false);
-   }
- };
+  useEffect(() => {
+    fetchFoodImages();
+  }, []);
 
- const handleFlip = (index) => {
-   setSelectedImageIndex(index);
- };
+  const fetchFoodImages = async () => {
+    try {
+      setIsLoading(true);
+      console.log('이미지 요청 URL:', `${IMAGES_URL}?type=preferred`);
 
- const handleUnflip = (index) => {
-   if (selectedImageIndex === index) {
-     setSelectedImageIndex(null);
-   }
- };
+      const response = await fetch(`${IMAGES_URL}?type=preferred`);
+      const data = await response.json();
 
- const handleRestaurantPress = (restaurant) => {
-   Alert.alert('추천 식당 선택', `${restaurant}를 선택하셨습니다.`);
- };
+      console.log('서버 응답:', data);
 
- if (isLoading) {
-   return (
-     <SafeAreaProvider>
-       <SafeAreaView style={styles.container}>
-         <ActivityIndicator size="large" color="#FFE9AF" />
-       </SafeAreaView>
-     </SafeAreaProvider>
-   );
- }
+      if (data.status === 'success') {
+        const selectedImages = data.images
+          .slice(0, 5)
+          .map((img) => img.image_url);
+        setImages(selectedImages);
+      } else {
+        console.error('이미지 로드 실패:', data.message);
+        Alert.alert('오류', '이미지를 불러오는데 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('이미지 로드 중 에러:', error);
+      Alert.alert('오류', '서버 연결에 실패했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
- return (
-   <SafeAreaProvider>
-     <SafeAreaView style={styles.container}>
-       <Text style={styles.title}>오늘의 추천 음식은?</Text>
+  const handleFlip = (index) => {
+    // No longer need to set selectedImageIndex
+  };
 
-       <View style={styles.scrollContainer}>
-         <ScrollView
-           horizontal
-           pagingEnabled
-           showsHorizontalScrollIndicator={false}
-           onScroll={Animated.event(
-             [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-             { useNativeDriver: false }
-           )}
-           scrollEventThrottle={16}
-         >
-           {images.map((imageUrl, imageIndex) => (
-             <FlipCard
-               key={imageIndex}
-               imageUrl={imageUrl}
-               width={windowWidth}
-               height={250}
-               onFlip={handleFlip}
-               onUnflip={handleUnflip}
-               index={imageIndex}
-             />
-           ))}
-         </ScrollView>
-         <View style={styles.indicatorContainer}>
-           {images.map((_, imageIndex) => {
-             const width = scrollX.interpolate({
-               inputRange: [
-                 windowWidth * (imageIndex - 1),
-                 windowWidth * imageIndex,
-                 windowWidth * (imageIndex + 1),
-               ],
-               outputRange: [8, 16, 8],
-               extrapolate: 'clamp',
-             });
-             return (
-               <Animated.View
-                 key={imageIndex}
-                 style={[styles.normalDot, { width }]}
-               />
-             );
-           })}
-         </View>
-       </View>
+  const handleUnflip = (index) => {
+    // No longer need to unset selectedImageIndex
+  };
 
-       {selectedImageIndex !== null && (
-         <View style={styles.recommendationContainer}>
-           <Text style={styles.recommendationTitle}>추천 식당</Text>
-           <FlatList
-             data={restaurantRecommendations[selectedImageIndex] || []}
-             keyExtractor={(item, index) => index.toString()}
-             renderItem={({ item }) => (
-               <TouchableOpacity
-                 style={styles.restaurantButton}
-                 onPress={() => handleRestaurantPress(item)}
-               >
-                 <Text style={styles.restaurantButtonText}>{item}</Text>
-               </TouchableOpacity>
-             )}
-             horizontal
-             showsHorizontalScrollIndicator={false}
-           />
-         </View>
-       )}
+  const handleRestaurantPress = (restaurant) => {
+    Alert.alert('추천 식당 선택', `${restaurant}를 선택하셨습니다.`);
+  };
 
-       <View style={styles.infoContainer}>
-         <Text style={styles.infoTitle}>오늘의 인기 음식은?</Text>
-         <Text style={styles.infoText}>{popularToday}</Text>
-         <Text style={styles.infoTitle}>어제의 인기 음식은?</Text>
-         <Text style={styles.infoText}>{popularYesterday}</Text>
-       </View>
-     </SafeAreaView>
-   </SafeAreaProvider>
- );
+  // Adjusted handleMomentumScrollEnd to use correct snap interval
+  const handleMomentumScrollEnd = (event) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const newIndex = Math.round(offsetX / (cardWidth + 20)); // Use cardWidth + margin
+
+    if (newIndex !== currentIndex) {
+      const currentTime = Date.now();
+      const duration = currentTime - lastActiveTime.current;
+      console.log(`Image ${currentIndex + 1} was viewed for ${duration}ms`);
+
+      // Accumulate dwell time for each image
+      if (accumulatedTimes.current[currentIndex]) {
+        accumulatedTimes.current[currentIndex] += duration;
+      } else {
+        accumulatedTimes.current[currentIndex] = duration;
+      }
+
+      setCurrentIndex(newIndex);
+      lastActiveTime.current = currentTime;
+
+      console.log('Accumulated Times:', accumulatedTimes.current);
+    }
+  };
+
+  // Ensure the last image's dwell time is recorded when component unmounts
+  useEffect(() => {
+    return () => {
+      const currentTime = Date.now();
+      const duration = currentTime - lastActiveTime.current;
+      if (accumulatedTimes.current[currentIndex]) {
+        accumulatedTimes.current[currentIndex] += duration;
+      } else {
+        accumulatedTimes.current[currentIndex] = duration;
+      }
+      console.log(`Image ${currentIndex + 1} was viewed for ${duration}ms`);
+      console.log('Final Accumulated Times:', accumulatedTimes.current);
+    };
+  }, []);
+
+  if (isLoading) {
+    return (
+      <SafeAreaProvider>
+        <SafeAreaView style={styles.container}>
+          <ActivityIndicator size="large" color="#FFE9AF" />
+        </SafeAreaView>
+      </SafeAreaProvider>
+    );
+  }
+
+  // Calculated cardWidth to make side images partially visible
+  const cardWidth = windowWidth * 0.8;
+
+  return (
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.container}>
+        <Text style={styles.title}>오늘의 추천 음식은?</Text>
+
+        <View style={styles.scrollContainer}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            // Centered the content to make side images partially visible
+            contentContainerStyle={{
+              paddingHorizontal: (windowWidth - cardWidth) / 2, // Center the first and last items
+            }}
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+              { useNativeDriver: false }
+            )}
+            scrollEventThrottle={16}
+            // Added handleMomentumScrollEnd to track image changes
+            onMomentumScrollEnd={handleMomentumScrollEnd}
+            snapToInterval={cardWidth + 20} // Adjusted snap interval for new card width and margin
+            decelerationRate="fast"
+            overScrollMode="never"
+          >
+            {images.map((imageUrl, imageIndex) => (
+              <FlipCard
+                key={imageIndex}
+                imageUrl={imageUrl}
+                width={cardWidth}
+                height={250}
+                onFlip={handleFlip}
+                onUnflip={handleUnflip}
+                index={imageIndex}
+              />
+            ))}
+          </ScrollView>
+          <View style={styles.indicatorContainer}>
+            {images.map((_, imageIndex) => {
+              const width = scrollX.interpolate({
+                inputRange: [
+                  (cardWidth + 20) * (imageIndex - 1),
+                  (cardWidth + 20) * imageIndex,
+                  (cardWidth + 20) * (imageIndex + 1),
+                ],
+                outputRange: [8, 16, 8],
+                extrapolate: 'clamp',
+              });
+              return (
+                <Animated.View
+                  key={imageIndex}
+                  style={[styles.normalDot, { width }]}
+                />
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Made recommendation container always visible and based on currentIndex */}
+        <View style={styles.recommendationContainer}>
+          <Text style={styles.recommendationTitle}>추천 식당</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            overScrollMode="never"
+          >
+            {(restaurantRecommendations[currentIndex] || []).map(
+              (item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.restaurantButton}
+                  onPress={() => handleRestaurantPress(item)}
+                >
+                  <Text style={styles.restaurantButtonText}>{item}</Text>
+                </TouchableOpacity>
+              )
+            )}
+          </ScrollView>
+        </View>
+
+        <View style={styles.infoContainer}>
+          <Text style={styles.infoTitle}>오늘의 인기 음식은?</Text>
+          <Text style={styles.infoText}>{popularToday}</Text>
+          <Text style={styles.infoTitle}>어제의 인기 음식은?</Text>
+          <Text style={styles.infoText}>{popularYesterday}</Text>
+        </View>
+      </SafeAreaView>
+    </SafeAreaProvider>
+  );
 };
 
 const styles = StyleSheet.create({
@@ -273,23 +327,21 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     height: 300,
+    // Centered the items in the scroll container
     alignItems: 'center',
     justifyContent: 'center',
   },
   card: {
     flex: 1,
-    marginVertical: 4,
-    marginHorizontal: 16,
     borderRadius: 10,
     overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
+    // Removed margins from card to handle spacing via container
   },
   flipCard: {
-    backfaceVisibility: 'hidden', // 뒷면이 보이지 않도록 설정
+    backfaceVisibility: 'hidden',
   },
   flipCardBack: {
-    backgroundColor: '#CCCCCC', // 뒷면의 회색 배경
+    backgroundColor: '#CCCCCC',
     position: 'absolute',
     top: 0,
     left: 0,
@@ -349,6 +401,7 @@ const styles = StyleSheet.create({
     width: '90%',
     padding: 20,
     marginTop: 30,
+    marginBottom: 20,
   },
   infoTitle: {
     fontSize: 18,

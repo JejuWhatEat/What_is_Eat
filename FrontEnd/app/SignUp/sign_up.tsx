@@ -16,9 +16,9 @@ import React, { useState } from 'react';
 
 // API URL 상수 정의
 const API_URL = Platform.select({
-  ios: 'http://172.18.102.72:8000/api/signup/',      // expo IP 사용
+  ios: 'http://127.0.0.1:8000/api/signup/',      // expo IP 사용
   android: 'http://172.18.102.72:8000/api/signup/',  // expo IP 사용
-  default: 'http://172.18.102.72:8000/api/signup/'   // expo IP 사용
+  default: 'http://172.0.0.1:8000/api/signup/'   // expo IP 사용
 });
 
 export default function Index() {
