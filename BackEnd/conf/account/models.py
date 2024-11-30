@@ -125,3 +125,18 @@ class NutritionalInformation(models.Model):
 
 
 
+
+# models.py에 추가
+
+class UserAnalytics(models.Model):
+    user_account = models.OneToOneField(UserAccount, on_delete=models.CASCADE, related_name='analytics')
+    is_vegan = models.BooleanField(default=False)
+    gender = models.CharField(max_length=1, choices=UserInfo.GENDER_CHOICES)
+    allergies = models.TextField(blank=True)
+    preferred_foods = models.TextField(blank=True)
+    unpreferred_foods = models.TextField(blank=True)
+    dwell_times = models.JSONField(default=dict)
+    last_updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'user_analytics'

@@ -13,6 +13,7 @@ from django.conf import settings
 import logging
 from .models import UserInfo, PreferredFood, UserAccount, FoodCategory
 from .utils import FOOD_DATA  # food_data에서 FOOD_DATA로 변경
+from .models import UserAnalytics
 
 logger = logging.getLogger(__name__)
 
@@ -172,8 +173,10 @@ def save_profile(request):
 def get_food_images(request):
     """음식 이미지와 정보를 반환하는 뷰"""
     try:
+        import random
+        request_type = request.GET.get('type', '')
+
         food_list = []
-        # 142번까지만 조회하도록 수정
         for number in range(1, 143):
             food_info = next(
                 ({"name": name, "data": data} for name, data in FOOD_DATA.items() 
@@ -181,36 +184,39 @@ def get_food_images(request):
                 None
             )
             
-            if food_info:
-                # 이미지 파일 존재 여부 확인
-                image_path = f'food_images/image{number}.jpeg.jpg'
-                full_path = os.path.join(settings.MEDIA_ROOT, image_path)
-                
-                # 이미지가 실제로 존재하는 경우에만 추가
-                if os.path.exists(full_path):
-                    # BASE_URL 대신 request.build_absolute_uri 사용
-                    image_url = request.build_absolute_uri(f'/media/food_images/image{number}.jpeg.jpg')
-                    
-                    food_list.append({
-                        'id': number,
-                        'food_name': food_info["name"],
-                        'category_id': food_info["data"]["category"],
-                        'image_url': image_url,
-                        'category_name': dict(Food.CATEGORY_CHOICES)[food_info["data"]["category"]]
-                    })
-                    print(f"Added food: {food_info['name']} with image: {image_url}")
+            if food_info and os.path.exists(os.path.join(settings.MEDIA_ROOT, f'food_images/image{number}.jpeg.jpg')):
+                image_data = {
+                    'id': number,
+                    'original_id': number,  # 원본 ID 추가
+                    'food_name': food_info["name"],
+                    'category_id': food_info["data"]["category"],
+                    'image_url': request.build_absolute_uri(f'/media/food_images/image{number}.jpeg.jpg'),
+                    'category_name': dict(Food.CATEGORY_CHOICES)[food_info["data"]["category"]]
+                }
+                food_list.append(image_data)
 
-        print(f"Successfully loaded {len(food_list)} foods with images")
-        return Response({
-            'status': 'success',
-            'total_count': len(food_list),
-            'images': food_list
-        })
+        if request_type == 'preferred':
+            # 랜덤으로 5개 선택하고 1-100 사이의 랜덤 ID 할당
+            selected_images = random.sample(food_list, 5)
+            random_numbers = random.sample(range(1, 101), 5)
+            
+            for img, rand_num in zip(selected_images, random_numbers):
+                img['id'] = rand_num  # 랜덤 ID 할당
+                
+            return Response({
+                'status': 'success',
+                'total_count': len(selected_images),
+                'images': selected_images
+            })
+        else:
+            return Response({
+                'status': 'success',
+                'total_count': len(food_list),
+                'images': food_list
+            })
 
     except Exception as e:
         print(f"Error in get_food_images: {str(e)}")
-        import traceback
-        print(traceback.format_exc())
         return Response({
             'status': 'error',
             'message': str(e)
@@ -342,4 +348,107 @@ def save_preferred_foods(request):
             'status': 'error',
             'message': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# views.py의 import 부분에 추가
+
+@api_view(['POST'])
+def update_dwell_time(request):
+    print("Received data:", request.data)
+    try:
+        dwell_times = request.data.get('dwell_times', {})
+        user_account = UserAccount.objects.first()
+
+        if not user_account:
+            return Response({
+                'status': 'error',
+                'message': '사용자를 찾을 수 없습니다.'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # UserInfo 가져오기
+        user_info = UserInfo.objects.get(user_account=user_account)
+        
+        # 선호/비선호 음식 정보 가져오기
+        preferred_foods = PreferredFood.objects.filter(user_info=user_info)
+        unpreferred_foods = UnpreferredFood.objects.filter(user_info=user_info)
+
+        analytics, created = UserAnalytics.objects.get_or_create(
+            user_account=user_account,
+            defaults={
+                'dwell_times': {},
+                'is_vegan': user_info.is_vegan,
+                'gender': user_info.gender,
+                'preferred_foods': ','.join([str(pf.food_number) for pf in preferred_foods]),
+                'unpreferred_foods': ','.join([str(upf.food_number) for upf in unpreferred_foods]),
+            }
+        )
+
+        # 선호/비선호 음식 정보 업데이트
+        analytics.is_vegan = user_info.is_vegan
+        analytics.gender = user_info.gender
+        analytics.preferred_foods = ','.join([str(pf.food_number) for pf in preferred_foods])
+        analytics.unpreferred_foods = ','.join([str(upf.food_number) for upf in unpreferred_foods])
+
+        # 체류시간 업데이트
+        current_times = analytics.dwell_times or {}
+        for food_id, time in dwell_times.items():
+            food_id_str = str(food_id)
+            if food_id_str in current_times:
+                current_times[food_id_str] = int(current_times[food_id_str]) + int(time)
+            else:
+                current_times[food_id_str] = int(time)
+
+        analytics.dwell_times = current_times
+        analytics.save()
+
+        return Response({
+            'status': 'success',
+            'message': '데이터가 업데이트되었습니다.',
+            'data': {
+                'dwell_times': analytics.dwell_times,
+                'preferred_foods': analytics.preferred_foods,
+                'unpreferred_foods': analytics.unpreferred_foods
+            }
+        })
+
+    except Exception as e:
+        print(f"Error in update_dwell_time: {str(e)}")
+        return Response({
+            'status': 'error',
+            'message': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+def get_user_analytics(request, user_id):
+    """사용자의 통합 분석 데이터를 조회하는 API"""
+    try:
+        # 사용자 분석 데이터 가져오기
+        analytics = UserAnalytics.objects.get(user_account_id=user_id)
+        
+        return Response({
+            'status': 'success',
+            'data': {
+                'user_id': user_id,
+                'is_vegan': analytics.is_vegan,
+                'gender': analytics.gender,
+                'allergies': analytics.get_allergies_list(),
+                'preferred_foods': analytics.get_preferred_foods_list(),
+                'unpreferred_foods': analytics.get_unpreferred_foods_list(),
+                'dwell_times': analytics.dwell_times
+            }
+        })
+        
+    except UserAnalytics.DoesNotExist:
+        return Response({
+            'status': 'error',
+            'message': '사용자 분석 데이터를 찾을 수 없습니다.'
+        }, status=status.HTTP_404_NOT_FOUND)
+        
+    except Exception as e:
+        print(f"Error in get_user_analytics: {str(e)}")
+        return Response({
+            'status': 'error',
+            'message': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 

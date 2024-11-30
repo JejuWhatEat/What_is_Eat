@@ -1,4 +1,3 @@
-// PreferedFood.tsx
 import React, { useState, useEffect } from 'react';
 import { 
   View, 
@@ -10,12 +9,12 @@ import {
   TouchableOpacity, 
   Alert, 
   Platform,
-  ActivityIndicator 
+  ActivityIndicator,
+  Dimensions 
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
-// API URL 상수 정의
 const BASE_URL = Platform.select({
    ios: 'http://127.0.0.1:8000',
    android: 'http://172.18.102.72:8000',
@@ -24,6 +23,11 @@ const BASE_URL = Platform.select({
 
 const SAVE_URL = `${BASE_URL}/api/save-preferred-foods/`;
 const IMAGES_URL = `${BASE_URL}/api/food-images/`;
+
+const { width: screenWidth } = Dimensions.get('window');
+const numColumns = 3;
+const itemSpacing = 10;
+const itemWidth = (screenWidth - (itemSpacing * (numColumns + 1))) / numColumns;
 
 const PreferedFood = () => {
   const router = useRouter();
@@ -39,36 +43,22 @@ const PreferedFood = () => {
   const fetchFoodImages = async () => {
     try {
       setIsLoading(true);
-      const requestUrl = `${IMAGES_URL}?type=preferred`;
-      console.log('요청 URL:', requestUrl);
-      
-      const response = await fetch(requestUrl);
-      console.log('응답 상태:', response.status);
-      
+      const response = await fetch(IMAGES_URL);  // type 쿼리 제거
       const data = await response.json();
-      console.log('서버 응답 데이터:', JSON.stringify(data, null, 2));
-
-      if (data.status === 'success' && data.images && data.images.length > 0) {
-        console.log('첫 번째 이미지 URL:', data.images[0].image_url);
-        
-        const formattedData = data.images.map(img => {
-          console.log('이미지 정보:', {
-            id: img.id,
-            url: img.image_url,
-            name: img.food_name
-          });
-          return {
-            id: img.id.toString(),
-            image_url: img.image_url,
-            food_name: img.food_name,
-            selected: false
-          };
-        });
-        
+      
+      console.log('서버 응답:', data);
+  
+      if (data.status === 'success') {
+        const formattedData = data.images.map(img => ({
+          id: img.id.toString(),
+          image_url: img.image_url,
+          food_name: img.food_name,
+          selected: false
+        }));
         setFoodData(formattedData);
       } else {
-        console.error('이미지 데이터 없음 또는 잘못된 형식:', data);
-        Alert.alert('오류', '이미지 데이터를 불러올 수 없습니다.');
+        console.error('이미지 로드 실패:', data.message);
+        Alert.alert('오류', '이미지를 불러오는데 실패했습니다.');
       }
     } catch (error) {
       console.error('이미지 로드 중 에러:', error);
@@ -84,20 +74,19 @@ const PreferedFood = () => {
       return;
     }
 
-    const updatedData = foodData.map((item) => {
-      if (item.id === id) {
-        const isSelected = !item.selected;
-        setSelectedCount((prevCount) =>
-          isSelected ? prevCount + 1 : prevCount - 1
-        );
-        return { ...item, selected: isSelected };
-      }
-      return item;
-    });
-    setFoodData(updatedData);
+    setFoodData(prevData => 
+      prevData.map(item => {
+        if (item.id === id) {
+          const newSelected = !item.selected;
+          setSelectedCount(prev => newSelected ? prev + 1 : prev - 1);
+          return { ...item, selected: newSelected };
+        }
+        return item;
+      })
+    );
   };
 
-  const savePreferredFoods = async () => {
+  const savePreferredFoods = async () => {  // 함수 이름만 다름
     if (selectedCount === 0) {
       Alert.alert('알림', '최소 1개 이상의 음식을 선택해주세요.');
       return;
@@ -115,7 +104,7 @@ const PreferedFood = () => {
       }));
 
     try {
-      console.log('선호 음식 저장 요청:', selectedFoods);
+      console.log('선호 음식 저장 요청:', selectedFoods);  // 로그 메시지만 다름
       
       const response = await fetch(SAVE_URL, {
         method: 'POST',
@@ -123,40 +112,58 @@ const PreferedFood = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          preferred_foods: selectedFoods
+          preferred_foods: selectedFoods  // 이 부분만 다름
         })
       });
 
-      console.log('저장 응답 상태:', response.status);
       const data = await response.json();
-      console.log('저장 응답 데이터:', data);
+      console.log('서버 응답:', data);
 
       if (response.ok) {
         Alert.alert(
           '성공',
-          '선호하는 음식이 저장되었습니다.',
+          '좋아하는 음식이 저장되었습니다.',  // 메시지만 다름
           [
             {
               text: '확인',
-              onPress: () => router.push('/UnPreferedFood')
+              onPress: () => router.push('/UnPreferedFood')  // 여기만 다름
             }
           ],
           { cancelable: false }
         );
       } else {
-        Alert.alert('오류', data.error || '선호 음식 저장에 실패했습니다.');
+        Alert.alert('오류', data.error || '음식 저장에 실패했습니다.');
       }
     } catch (error) {
       console.error('API 호출 에러:', error);
       Alert.alert('오류', '서버 연결에 실패했습니다.');
     }
-  };
+};
 
   const filteredFoodData = searchText
     ? foodData.filter(item =>
         item.food_name.toLowerCase().includes(searchText.toLowerCase())
       )
     : foodData;
+
+  const renderFoodItem = ({ item }) => (
+    <TouchableOpacity
+      style={[styles.foodItem, item.selected && styles.selectedItem]}
+      onPress={() => toggleSelection(item.id)}
+      activeOpacity={0.7}
+    >
+      <Image
+        source={{ uri: item.image_url }}
+        style={styles.foodImage}
+        resizeMode="cover"
+      />
+      {item.selected && (
+        <View style={styles.checkMark}>
+          <Text style={styles.checkText}>✓</Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
 
   if (isLoading) {
     return (
@@ -169,6 +176,7 @@ const PreferedFood = () => {
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>좋아하는 음식</Text>
+      
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
@@ -176,41 +184,29 @@ const PreferedFood = () => {
           value={searchText}
           onChangeText={setSearchText}
         />
-        <TouchableOpacity style={styles.searchIcon}>
-          <Text>🔍</Text>
-        </TouchableOpacity>
         <Text style={styles.counterText}>({selectedCount}/5)</Text>
       </View>
+
       <FlatList
         data={filteredFoodData}
-        keyExtractor={(item) => item.id}
-        numColumns={3}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={[styles.foodItem, item.selected && styles.selectedItem]}
-            onPress={() => toggleSelection(item.id)}
-          >
-            <Image
-              source={{ uri: item.image_url }}
-              style={styles.foodImage}
-              resizeMode="cover"
-              onError={(error) => console.error('이미지 로드 실패:', item.image_url, error)}
-              onLoad={() => console.log('이미지 로드 성공:', item.image_url)}
-            />
-            {item.selected && (
-              <View style={styles.checkMark}>
-                <Text style={styles.checkText}>✔</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        )}
+        renderItem={renderFoodItem}
+        keyExtractor={item => item.id}
+        numColumns={numColumns}
         contentContainerStyle={styles.foodList}
+        showsVerticalScrollIndicator={false}
       />
+
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button} onPress={() => router.back()}>
+        <TouchableOpacity 
+          style={styles.button} 
+          onPress={() => router.back()}
+        >
           <Text style={styles.buttonText}>뒤로가기</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={savePreferredFoods}>
+        <TouchableOpacity 
+          style={styles.button} 
+          onPress={savePreferredFoods}
+        >
           <Text style={styles.buttonText}>다음</Text>
         </TouchableOpacity>
       </View>
@@ -218,92 +214,90 @@ const PreferedFood = () => {
   );
 };
 
-
 const styles = StyleSheet.create({
- container: {
-   flex: 1,
-   backgroundColor: '#FEBE98',
-   alignItems: 'center',
-   paddingTop: 20,
- },
- title: {
-   fontSize: 24,
-   fontWeight: 'bold',
-   marginBottom: 20,
- },
- searchContainer: {
-   flexDirection: 'row',
-   alignItems: 'center',
-   marginBottom: 20,
-   backgroundColor: '#fff',
-   borderRadius: 10,
-   paddingHorizontal: 10,
-   width: '80%',
-   justifyContent: 'space-between',
- },
- searchInput: {
-   flex: 1,
-   paddingVertical: 8,
- },
- searchIcon: {
-   marginLeft: 10,
- },
- counterText: {
-   marginLeft: 10,
-   fontSize: 16,
- },
- foodList: {
-   alignItems: 'center',
- },
- foodItem: {
-   width: 100,
-   height: 100,
-   margin: 5,
-   borderRadius: 10,
-   overflow: 'hidden',
-   position: 'relative',
- },
- selectedItem: {
-   opacity: 0.6,
- },
- foodImage: {
-   width: '100%',
-   height: '100%',
- },
- checkMark: {
-   position: 'absolute',
-   top: 5,
-   right: 5,
-   backgroundColor: 'rgba(0, 0, 0, 0.5)',
-   borderRadius: 15,
-   width: 30,
-   height: 30,
-   justifyContent: 'center',
-   alignItems: 'center',
- },
- checkText: {
-   color: '#fff',
-   fontSize: 18,
- },
- buttonContainer: {
-   flexDirection: 'row',
-   justifyContent: 'space-between',
-   width: '80%',
-   marginTop: 20,
-   marginBottom: 20,
- },
- button: {
-   backgroundColor: '#FFE9AF',
-   paddingVertical: 10,
-   paddingHorizontal: 30,
-   borderRadius: 20,
-   marginHorizontal: 10,
- },
- buttonText: {
-   fontSize: 16,
-   color: '#000',
- },
+  container: {
+    flex: 1,
+    backgroundColor: '#FEBE98',
+    alignItems: 'center',
+    paddingTop: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    width: '80%',
+    justifyContent: 'space-between',
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 8,
+  },
+  searchIcon: {
+    marginLeft: 10,
+  },
+  counterText: {
+    marginLeft: 10,
+    fontSize: 16,
+  },
+  foodList: {
+    alignItems: 'center',
+  },
+  foodItem: {
+    width: 100,
+    height: 100,
+    margin: 5,
+    borderRadius: 10,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  selectedItem: {
+    opacity: 0.6,
+  },
+  foodImage: {
+    width: '100%',
+    height: '100%',
+  },
+  checkMark: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 15,
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkText: {
+    color: '#fff',
+    fontSize: 18,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '80%',
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  button: {
+    backgroundColor: '#FFE9AF',
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    borderRadius: 20,
+    marginHorizontal: 10,
+  },
+  buttonText: {
+    fontSize: 16,
+    color: '#000',
+  },
 });
 
 export default PreferedFood;
-

@@ -1,34 +1,20 @@
 import React, { useRef, useState, useEffect } from 'react';
 import {
-  ScrollView,
-  Text,
-  StyleSheet,
-  View,
-  ImageBackground,
-  Animated,
-  useWindowDimensions,
-  TouchableWithoutFeedback,
-  TouchableOpacity,
-  Alert,
-  Platform,
-  ActivityIndicator,
+  ScrollView, Text, StyleSheet, View, ImageBackground,
+  Animated, useWindowDimensions, TouchableWithoutFeedback,
+  TouchableOpacity, Alert, Platform, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 
-// API URL constants
 const BASE_URL = Platform.select({
   ios: 'http://127.0.0.1:8000',
   android: 'http://172.18.102.72:8000',
   default: 'http://127.0.0.1:8000',
 });
 
-const IMAGES_URL = `${BASE_URL}/api/food-images/`;
-
-// Popular food data for today and yesterday
 const popularToday = '1. 돈까스\n2. 비빔밥\n3. 냉면';
 const popularYesterday = '1. 마라탕\n2. 짬뽕\n3. 순대국밥';
 
-// Restaurant recommendations data
 const restaurantRecommendations = {
   0: ['레스토랑 A', '레스토랑 B', '레스토랑 C'],
   1: ['레스토랑 D', '레스토랑 E', '레스토랑 F'],
@@ -37,8 +23,7 @@ const restaurantRecommendations = {
   4: ['레스토랑 M', '레스토랑 N', '레스토랑 O'],
 };
 
-// FlipCard component
-const FlipCard = ({ imageUrl, width, height, onFlip, onUnflip, index }) => {
+const FlipCard = ({ image, width, height, onFlip, onUnflip, index }) => {
   const animatedValue = useRef(new Animated.Value(0)).current;
   const [flipped, setFlipped] = useState(false);
 
@@ -78,7 +63,6 @@ const FlipCard = ({ imageUrl, width, height, onFlip, onUnflip, index }) => {
 
   return (
     <TouchableWithoutFeedback onPress={flipCard}>
-      {/* Adjusted marginHorizontal and width to center the card */}
       <View style={{ width, height, marginHorizontal: 10 }}>
         <Animated.View
           style={[
@@ -91,7 +75,7 @@ const FlipCard = ({ imageUrl, width, height, onFlip, onUnflip, index }) => {
             },
           ]}
         >
-          <ImageBackground source={{ uri: imageUrl }} style={styles.card} />
+          <ImageBackground source={{ uri: image.image_url }} style={styles.card} />
         </Animated.View>
 
         <Animated.View
@@ -118,37 +102,55 @@ const FlipCard = ({ imageUrl, width, height, onFlip, onUnflip, index }) => {
 const Main = () => {
   const scrollX = useRef(new Animated.Value(0)).current;
   const { width: windowWidth } = useWindowDimensions();
-
+  const cardWidth = windowWidth * 0.8;
   const [images, setImages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  // Added currentIndex to track the current active image index
   const [currentIndex, setCurrentIndex] = useState(0);
   const lastActiveTime = useRef(Date.now());
   const accumulatedTimes = useRef({});
 
-  useEffect(() => {
-    fetchFoodImages();
-  }, []);
+  const updateDwellTime = async (dwellTimes) => {
+    try {
+      // 실제 이미지 ID와 시간을 매핑
+      const mappedTimes = {};
+      Object.entries(dwellTimes).forEach(([index, time]) => {
+        const image = images[parseInt(index)];
+        if (image) {
+          mappedTimes[image.id] = time;
+        }
+      });
+
+      console.log('매핑된 체류시간:', mappedTimes);
+
+      const response = await fetch(`${BASE_URL}/api/update-dwell-time/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dwell_times: mappedTimes })
+      });
+
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      
+      const data = await response.json();
+      console.log('체류시간 업데이트 응답:', data);
+    } catch (error) {
+      console.error('체류시간 업데이트 실패:', error);
+    }
+  };
 
   const fetchFoodImages = async () => {
     try {
       setIsLoading(true);
-      console.log('이미지 요청 URL:', `${IMAGES_URL}?type=preferred`);
-
-      const response = await fetch(`${IMAGES_URL}?type=preferred`);
+      const response = await fetch(`${BASE_URL}/api/food-images/?type=preferred`);
+      
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      
       const data = await response.json();
-
       console.log('서버 응답:', data);
 
       if (data.status === 'success') {
-        const selectedImages = data.images
-          .slice(0, 5)
-          .map((img) => img.image_url);
-        setImages(selectedImages);
+        setImages(data.images);
       } else {
-        console.error('이미지 로드 실패:', data.message);
-        Alert.alert('오류', '이미지를 불러오는데 실패했습니다.');
+        throw new Error(data.message || '이미지 로드 실패');
       }
     } catch (error) {
       console.error('이미지 로드 중 에러:', error);
@@ -158,56 +160,49 @@ const Main = () => {
     }
   };
 
-  const handleFlip = (index) => {
-    // No longer need to set selectedImageIndex
-  };
-
-  const handleUnflip = (index) => {
-    // No longer need to unset selectedImageIndex
-  };
-
-  const handleRestaurantPress = (restaurant) => {
-    Alert.alert('추천 식당 선택', `${restaurant}를 선택하셨습니다.`);
-  };
-
-  // Adjusted handleMomentumScrollEnd to use correct snap interval
   const handleMomentumScrollEnd = (event) => {
     const offsetX = event.nativeEvent.contentOffset.x;
-    const newIndex = Math.round(offsetX / (cardWidth + 20)); // Use cardWidth + margin
+    const newIndex = Math.round(offsetX / (cardWidth + 20));
 
     if (newIndex !== currentIndex) {
       const currentTime = Date.now();
       const duration = currentTime - lastActiveTime.current;
-      console.log(`Image ${currentIndex + 1} was viewed for ${duration}ms`);
+      const image = images[currentIndex];
+      
+      console.log(`Image ${image.id} was viewed for ${duration}ms`);
 
-      // Accumulate dwell time for each image
-      if (accumulatedTimes.current[currentIndex]) {
-        accumulatedTimes.current[currentIndex] += duration;
-      } else {
-        accumulatedTimes.current[currentIndex] = duration;
-      }
+      accumulatedTimes.current[currentIndex] = 
+        (accumulatedTimes.current[currentIndex] || 0) + duration;
 
       setCurrentIndex(newIndex);
       lastActiveTime.current = currentTime;
 
       console.log('Accumulated Times:', accumulatedTimes.current);
+      updateDwellTime(accumulatedTimes.current);
     }
   };
 
-  // Ensure the last image's dwell time is recorded when component unmounts
   useEffect(() => {
+    fetchFoodImages();
     return () => {
       const currentTime = Date.now();
       const duration = currentTime - lastActiveTime.current;
-      if (accumulatedTimes.current[currentIndex]) {
-        accumulatedTimes.current[currentIndex] += duration;
-      } else {
-        accumulatedTimes.current[currentIndex] = duration;
+      if (currentIndex >= 0 && currentIndex < images.length) {
+        accumulatedTimes.current[currentIndex] = 
+          (accumulatedTimes.current[currentIndex] || 0) + duration;
+        
+        console.log(`Final dwell time for image ${images[currentIndex]?.id}: ${duration}ms`);
+        console.log('Final Accumulated Times:', accumulatedTimes.current);
+        updateDwellTime(accumulatedTimes.current);
       }
-      console.log(`Image ${currentIndex + 1} was viewed for ${duration}ms`);
-      console.log('Final Accumulated Times:', accumulatedTimes.current);
     };
   }, []);
+
+  const handleFlip = () => {};
+  const handleUnflip = () => {};
+  const handleRestaurantPress = (restaurant) => {
+    Alert.alert('추천 식당 선택', `${restaurant}를 선택하셨습니다.`);
+  };
 
   if (isLoading) {
     return (
@@ -219,9 +214,6 @@ const Main = () => {
     );
   }
 
-  // Calculated cardWidth to make side images partially visible
-  const cardWidth = windowWidth * 0.8;
-
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
@@ -231,30 +223,28 @@ const Main = () => {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            // Centered the content to make side images partially visible
             contentContainerStyle={{
-              paddingHorizontal: (windowWidth - cardWidth) / 2, // Center the first and last items
+              paddingHorizontal: (windowWidth - cardWidth) / 2,
             }}
             onScroll={Animated.event(
               [{ nativeEvent: { contentOffset: { x: scrollX } } }],
               { useNativeDriver: false }
             )}
             scrollEventThrottle={16}
-            // Added handleMomentumScrollEnd to track image changes
             onMomentumScrollEnd={handleMomentumScrollEnd}
-            snapToInterval={cardWidth + 20} // Adjusted snap interval for new card width and margin
+            snapToInterval={cardWidth + 20}
             decelerationRate="fast"
             overScrollMode="never"
           >
-            {images.map((imageUrl, imageIndex) => (
+            {images.map((image, index) => (
               <FlipCard
-                key={imageIndex}
-                imageUrl={imageUrl}
+                key={index}
+                image={image}
                 width={cardWidth}
                 height={250}
                 onFlip={handleFlip}
                 onUnflip={handleUnflip}
-                index={imageIndex}
+                index={index}
               />
             ))}
           </ScrollView>
@@ -279,7 +269,6 @@ const Main = () => {
           </View>
         </View>
 
-        {/* Made recommendation container always visible and based on currentIndex */}
         <View style={styles.recommendationContainer}>
           <Text style={styles.recommendationTitle}>추천 식당</Text>
           <ScrollView
@@ -287,17 +276,15 @@ const Main = () => {
             showsHorizontalScrollIndicator={false}
             overScrollMode="never"
           >
-            {(restaurantRecommendations[currentIndex] || []).map(
-              (item, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.restaurantButton}
-                  onPress={() => handleRestaurantPress(item)}
-                >
-                  <Text style={styles.restaurantButtonText}>{item}</Text>
-                </TouchableOpacity>
-              )
-            )}
+            {(restaurantRecommendations[currentIndex] || []).map((item, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.restaurantButton}
+                onPress={() => handleRestaurantPress(item)}
+              >
+                <Text style={styles.restaurantButtonText}>{item}</Text>
+              </TouchableOpacity>
+            ))}
           </ScrollView>
         </View>
 
@@ -311,6 +298,7 @@ const Main = () => {
     </SafeAreaProvider>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
