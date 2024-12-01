@@ -104,14 +104,25 @@ const Main = () => {
   const { width: windowWidth } = useWindowDimensions();
   const cardWidth = windowWidth * 0.8;
   const [images, setImages] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const lastActiveTime = useRef(Date.now());
   const accumulatedTimes = useRef({});
+  // userEmail state는 한 번만 선언
+  const [userEmail, setUserEmail] = useState<string | null>(global.userEmail || null);
+  // state 선언부에 추가
 
   const updateDwellTime = async (dwellTimes) => {
+
     try {
-      // 실제 이미지 ID와 시간을 매핑
+      // 현재 이메일 상태 확인을 위한 로그
+      console.log('현재 저장된 이메일:', global.userEmail);
+
+      if (!global.userEmail) {
+        console.error('사용자 이메일을 찾을 수 없습니다');
+        return;
+      }
+
       const mappedTimes = {};
       Object.entries(dwellTimes).forEach(([index, time]) => {
         const image = images[parseInt(index)];
@@ -121,19 +132,37 @@ const Main = () => {
       });
 
       console.log('매핑된 체류시간:', mappedTimes);
+      console.log('사용할 이메일:', global.userEmail);
+
+      // response 선언 전에 요청 데이터 로깅
+      const requestData = {
+        dwell_times: mappedTimes,
+        email: global.userEmail
+      };
+      console.log('요청 데이터:', requestData);
 
       const response = await fetch(`${BASE_URL}/api/update-dwell-time/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dwell_times: mappedTimes })
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestData)
       });
 
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      
-      const data = await response.json();
-      console.log('체류시간 업데이트 응답:', data);
+      // 응답 처리 개선
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        console.error('서버 응답 에러:', responseData);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      console.log('체류시간 업데이트 성공:', responseData);
+      return responseData;
+
     } catch (error) {
       console.error('체류시간 업데이트 실패:', error);
+      throw error; // 에러를 상위로 전파
     }
   };
 
@@ -141,9 +170,9 @@ const Main = () => {
     try {
       setIsLoading(true);
       const response = await fetch(`${BASE_URL}/api/food-images/?type=preferred`);
-      
+
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      
+
       const data = await response.json();
       console.log('서버 응답:', data);
 
@@ -168,10 +197,10 @@ const Main = () => {
       const currentTime = Date.now();
       const duration = currentTime - lastActiveTime.current;
       const image = images[currentIndex];
-      
+
       console.log(`Image ${image.id} was viewed for ${duration}ms`);
 
-      accumulatedTimes.current[currentIndex] = 
+      accumulatedTimes.current[currentIndex] =
         (accumulatedTimes.current[currentIndex] || 0) + duration;
 
       setCurrentIndex(newIndex);
@@ -188,9 +217,9 @@ const Main = () => {
       const currentTime = Date.now();
       const duration = currentTime - lastActiveTime.current;
       if (currentIndex >= 0 && currentIndex < images.length) {
-        accumulatedTimes.current[currentIndex] = 
+        accumulatedTimes.current[currentIndex] =
           (accumulatedTimes.current[currentIndex] || 0) + duration;
-        
+
         console.log(`Final dwell time for image ${images[currentIndex]?.id}: ${duration}ms`);
         console.log('Final Accumulated Times:', accumulatedTimes.current);
         updateDwellTime(accumulatedTimes.current);
@@ -198,8 +227,8 @@ const Main = () => {
     };
   }, []);
 
-  const handleFlip = () => {};
-  const handleUnflip = () => {};
+  const handleFlip = () => { };
+  const handleUnflip = () => { };
   const handleRestaurantPress = (restaurant) => {
     Alert.alert('추천 식당 선택', `${restaurant}를 선택하셨습니다.`);
   };

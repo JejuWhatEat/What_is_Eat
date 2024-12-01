@@ -78,9 +78,11 @@ class LoginView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
+            # email도 함께 반환하도록 수정
             return Response({
                 'message': '로그인 성공',
-                'user_id': user.id
+                'user_id': user.id,
+                'email': user.email  # 실제 DB에 저장된 이메일 추가
             }, status=status.HTTP_200_OK)
 
         except Exception as e:
@@ -350,14 +352,21 @@ def save_preferred_foods(request):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-# views.py의 import 부분에 추가
-
 @api_view(['POST'])
 def update_dwell_time(request):
-    print("Received data:", request.data)
+    print("\n=== update_dwell_time 함수 시작 ===")
     try:
         dwell_times = request.data.get('dwell_times', {})
-        user_account = UserAccount.objects.first()
+        login_email = request.data.get('email')
+        
+        print(f"1. 이메일로 사용자 찾기: {login_email}")
+        
+        # UserAccount 찾기
+        user_account = None
+        for user in UserAccount.objects.all():
+            if user.email.lower() == login_email.lower():
+                user_account = user
+                break
 
         if not user_account:
             return Response({
@@ -365,58 +374,73 @@ def update_dwell_time(request):
                 'message': '사용자를 찾을 수 없습니다.'
             }, status=status.HTTP_404_NOT_FOUND)
 
-        # UserInfo 가져오기
-        user_info = UserInfo.objects.get(user_account=user_account)
-        
-        # 선호/비선호 음식 정보 가져오기
-        preferred_foods = PreferredFood.objects.filter(user_info=user_info)
-        unpreferred_foods = UnpreferredFood.objects.filter(user_info=user_info)
+        print(f"2. 찾은 UserAccount: {user_account.email}")
 
-        analytics, created = UserAnalytics.objects.get_or_create(
-            user_account=user_account,
-            defaults={
-                'dwell_times': {},
-                'is_vegan': user_info.is_vegan,
-                'gender': user_info.gender,
-                'preferred_foods': ','.join([str(pf.food_number) for pf in preferred_foods]),
-                'unpreferred_foods': ','.join([str(upf.food_number) for upf in unpreferred_foods]),
-            }
-        )
-
-        # 선호/비선호 음식 정보 업데이트
-        analytics.is_vegan = user_info.is_vegan
-        analytics.gender = user_info.gender
-        analytics.preferred_foods = ','.join([str(pf.food_number) for pf in preferred_foods])
-        analytics.unpreferred_foods = ','.join([str(upf.food_number) for upf in unpreferred_foods])
+        # UserInfo 가져오기 시도
+        try:
+            user_info = UserInfo.objects.get(user_account=user_account)
+            print("3. UserInfo 찾음")
+            preferred_foods = PreferredFood.objects.filter(user_info=user_info)
+            unpreferred_foods = UnpreferredFood.objects.filter(user_info=user_info)
+            
+             # 이 부분을 수정
+            analytics = UserAnalytics.objects.get_or_create(
+                user_account=user_account,
+                defaults={
+                    'dwell_times': {},
+                    'is_vegan': user_info.is_vegan,
+                    'gender': user_info.gender,
+                    'preferred_foods': ','.join(str(pf.food_number) for pf in preferred_foods),
+                    'unpreferred_foods': ','.join(str(unpreferred_food.food_number) for unpreferred_food in unpreferred_foods)
+                }
+            )[0]
+            
+             # 이 부분도 수정
+            analytics.is_vegan = user_info.is_vegan
+            analytics.gender = user_info.gender
+            analytics.preferred_foods = ','.join(str(pf.food_number) for pf in preferred_foods)
+            analytics.unpreferred_foods = ','.join(str(unpreferred_food.food_number) for unpreferred_food in unpreferred_foods)
+            
+        except UserInfo.DoesNotExist:
+            print("3. UserInfo 없음 - 기본 Analytics 생성")
+            # UserInfo가 없어도 체류시간은 저장
+            analytics = UserAnalytics.objects.get_or_create(
+                user_account=user_account,
+                defaults={
+                    'dwell_times': {}
+                }
+            )[0]
 
         # 체류시간 업데이트
+        print("4. 체류시간 업데이트 시작")
         current_times = analytics.dwell_times or {}
-        for food_id, time in dwell_times.items():
+        for food_id, time_ms in dwell_times.items():
             food_id_str = str(food_id)
             if food_id_str in current_times:
-                current_times[food_id_str] = int(current_times[food_id_str]) + int(time)
+                current_times[food_id_str] += int(time_ms)
             else:
-                current_times[food_id_str] = int(time)
+                current_times[food_id_str] = int(time_ms)
 
         analytics.dwell_times = current_times
         analytics.save()
+        print("5. 체류시간 저장 완료")
 
         return Response({
             'status': 'success',
-            'message': '데이터가 업데이트되었습니다.',
+            'message': '체류시간이 업데이트되었습니다.',
             'data': {
-                'dwell_times': analytics.dwell_times,
-                'preferred_foods': analytics.preferred_foods,
-                'unpreferred_foods': analytics.unpreferred_foods
+                'dwell_times': current_times
             }
         })
 
     except Exception as e:
-        print(f"Error in update_dwell_time: {str(e)}")
+        print(f"ERROR in update_dwell_time: {str(e)}")
         return Response({
             'status': 'error',
             'message': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 
 @api_view(['GET'])
 def get_user_analytics(request, user_id):
