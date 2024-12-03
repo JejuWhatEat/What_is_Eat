@@ -63,10 +63,6 @@ const FlipCard = ({ image, width, height, onFlip, onUnflip, index }) => {
 
   return (
     <TouchableWithoutFeedback onPress={flipCard}>
-<<<<<<< HEAD
-      {/* Adjusted marginHorizontal to center the card and make side images partially visible */}
-=======
->>>>>>> 18cedbcfc20a5da63064fb78f359c49da0886c29
       <View style={{ width, height, marginHorizontal: 10 }}>
         <Animated.View
           style={[
@@ -110,12 +106,7 @@ const FlipCard = ({ image, width, height, onFlip, onUnflip, index }) => {
 const Main = () => {
   const scrollX = useRef(new Animated.Value(0)).current;
   const { width: windowWidth } = useWindowDimensions();
-<<<<<<< HEAD
-
-  // Reduced state variables by removing selectedImageIndex
-=======
   const cardWidth = windowWidth * 0.8;
->>>>>>> 18cedbcfc20a5da63064fb78f359c49da0886c29
   const [images, setImages] = useState([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -202,28 +193,10 @@ const Main = () => {
     }
   };
 
-<<<<<<< HEAD
-  const handleFlip = (index) => {
-    // No longer need to set selectedImageIndex
-  };
 
-  const handleUnflip = (index) => {
-    // No longer need to unset selectedImageIndex
-  };
-
-  const handleRestaurantPress = (restaurant) => {
-    Alert.alert('추천 식당 선택', `${restaurant}를 선택하셨습니다.`);
-  };
-
-  // Added handleMomentumScrollEnd to track the current index and accumulate dwell time
-  const handleMomentumScrollEnd = (event) => {
-    const offsetX = event.nativeEvent.contentOffset.x;
-    const newIndex = Math.round(offsetX / (cardWidth + 20)); // Adjusted for new card width and margin
-=======
   const handleMomentumScrollEnd = (event) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const newIndex = Math.round(offsetX / (cardWidth + 20));
->>>>>>> 18cedbcfc20a5da63064fb78f359c49da0886c29
 
     if (newIndex !== currentIndex) {
       const currentTime = Date.now();
@@ -285,14 +258,9 @@ const Main = () => {
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
-<<<<<<< HEAD
-            // Centered the content to make side images partially visible
-            contentContainerStyle={{ paddingHorizontal: (windowWidth - cardWidth) / 2 }}
-=======
             contentContainerStyle={{
               paddingHorizontal: (windowWidth - cardWidth) / 2,
             }}
->>>>>>> 18cedbcfc20a5da63064fb78f359c49da0886c29
             onScroll={Animated.event(
               [{ nativeEvent: { contentOffset: { x: scrollX } } }],
               { useNativeDriver: false }
