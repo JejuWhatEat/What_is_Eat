@@ -78,6 +78,7 @@ const FlipCard = ({ image, width, height, onFlip, onUnflip, index }) => {
           <ImageBackground source={{ uri: image.image_url }} style={styles.card} />
         </Animated.View>
 
+        {/* Modified back side to show the image semi-transparently */}
         <Animated.View
           style={[
             styles.flipCard,
@@ -89,6 +90,7 @@ const FlipCard = ({ image, width, height, onFlip, onUnflip, index }) => {
             },
           ]}
         >
+          
           <ImageBackground source={{ uri: image.image_url }} style={styles.card}>
             <View style={styles.backOverlay}>
               <Text style={styles.backText}>영양 성분 추가 예정</Text>
@@ -182,6 +184,7 @@ const Main = () => {
       setIsLoading(false);
     }
   };
+
 
   const handleMomentumScrollEnd = (event) => {
     const offsetX = event.nativeEvent.contentOffset.x;
@@ -498,22 +501,17 @@ const styles = StyleSheet.create({
   flipCard: {
     backfaceVisibility: 'hidden',
   },
-  flipCardBack: {
-    backgroundColor: '#CCCCCC',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    borderRadius: 10,
-  },
-  backSide: {
+  // Removed flipCardBack style as it's no longer needed
+  backOverlay: {
     flex: 1,
-    backgroundColor: '#CCCCCC',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent overlay
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 10,
   },
   backText: {
     fontSize: 20,
-    color: '#333333',
+    color: '#FFFFFF',
     fontWeight: 'bold',
   },
   normalDot: {
