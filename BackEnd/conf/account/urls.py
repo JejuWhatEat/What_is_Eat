@@ -4,7 +4,7 @@ from django.conf.urls.static import static
 from .views import (
     SignUpView, LoginView, save_allergies, save_profile,
     save_preferred_foods, save_unpreferred_foods, get_food_images,
-    update_dwell_time, get_user_analytics  # get_random_food_images 제거
+    update_dwell_time, get_user_analytics, get_nutrition_info
 )
 
 urlpatterns = [
@@ -17,4 +17,5 @@ urlpatterns = [
     path('food-images/', get_food_images, name='food_images'),
     path('update-dwell-time/', update_dwell_time, name='update_dwell_time'),
     path('user-analytics/<int:user_id>/', get_user_analytics, name='get_user_analytics'),
+    path('nutrition/<int:food_id>/', get_nutrition_info, name='get_nutrition_info'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
