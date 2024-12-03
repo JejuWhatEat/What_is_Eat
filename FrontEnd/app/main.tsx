@@ -78,7 +78,7 @@ const FlipCard = ({ imageUrl, width, height, onFlip, onUnflip, index }) => {
 
   return (
     <TouchableWithoutFeedback onPress={flipCard}>
-      {/* Adjusted marginHorizontal and width to center the card */}
+      {/* Adjusted marginHorizontal to center the card and make side images partially visible */}
       <View style={{ width, height, marginHorizontal: 10 }}>
         <Animated.View
           style={[
@@ -94,10 +94,10 @@ const FlipCard = ({ imageUrl, width, height, onFlip, onUnflip, index }) => {
           <ImageBackground source={{ uri: imageUrl }} style={styles.card} />
         </Animated.View>
 
+        {/* Modified back side to show the image semi-transparently */}
         <Animated.View
           style={[
             styles.flipCard,
-            styles.flipCardBack,
             {
               transform: [{ rotateY: backInterpolate }],
               width: '100%',
@@ -106,9 +106,13 @@ const FlipCard = ({ imageUrl, width, height, onFlip, onUnflip, index }) => {
             },
           ]}
         >
-          <View style={styles.backSide}>
-            <Text style={styles.backText}>영양 성분 추가 예정</Text>
-          </View>
+          {/* Use ImageBackground to display the image */}
+          <ImageBackground source={{ uri: imageUrl }} style={styles.card}>
+            {/* Overlay a semi-transparent view */}
+            <View style={styles.backOverlay}>
+              <Text style={styles.backText}>영양 성분 추가 예정</Text>
+            </View>
+          </ImageBackground>
         </Animated.View>
       </View>
     </TouchableWithoutFeedback>
@@ -119,6 +123,7 @@ const Main = () => {
   const scrollX = useRef(new Animated.Value(0)).current;
   const { width: windowWidth } = useWindowDimensions();
 
+  // Reduced state variables by removing selectedImageIndex
   const [images, setImages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -170,10 +175,10 @@ const Main = () => {
     Alert.alert('추천 식당 선택', `${restaurant}를 선택하셨습니다.`);
   };
 
-  // Adjusted handleMomentumScrollEnd to use correct snap interval
+  // Added handleMomentumScrollEnd to track the current index and accumulate dwell time
   const handleMomentumScrollEnd = (event) => {
     const offsetX = event.nativeEvent.contentOffset.x;
-    const newIndex = Math.round(offsetX / (cardWidth + 20)); // Use cardWidth + margin
+    const newIndex = Math.round(offsetX / (cardWidth + 20)); // Adjusted for new card width and margin
 
     if (newIndex !== currentIndex) {
       const currentTime = Date.now();
@@ -230,11 +235,10 @@ const Main = () => {
         <View style={styles.scrollContainer}>
           <ScrollView
             horizontal
+            pagingEnabled
             showsHorizontalScrollIndicator={false}
             // Centered the content to make side images partially visible
-            contentContainerStyle={{
-              paddingHorizontal: (windowWidth - cardWidth) / 2, // Center the first and last items
-            }}
+            contentContainerStyle={{ paddingHorizontal: (windowWidth - cardWidth) / 2 }}
             onScroll={Animated.event(
               [{ nativeEvent: { contentOffset: { x: scrollX } } }],
               { useNativeDriver: false }
@@ -340,22 +344,17 @@ const styles = StyleSheet.create({
   flipCard: {
     backfaceVisibility: 'hidden',
   },
-  flipCardBack: {
-    backgroundColor: '#CCCCCC',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    borderRadius: 10,
-  },
-  backSide: {
+  // Removed flipCardBack style as it's no longer needed
+  backOverlay: {
     flex: 1,
-    backgroundColor: '#CCCCCC',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent overlay
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 10,
   },
   backText: {
     fontSize: 20,
-    color: '#333333',
+    color: '#FFFFFF',
     fontWeight: 'bold',
   },
   normalDot: {
