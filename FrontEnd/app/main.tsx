@@ -90,9 +90,8 @@ const FlipCard = ({ image, width, height, onFlip, onUnflip, index }) => {
             },
           ]}
         >
-          {/* Use ImageBackground to display the image */}
-          <ImageBackground source={{ uri: imageUrl }} style={styles.card}>
-            {/* Overlay a semi-transparent view */}
+          
+          <ImageBackground source={{ uri: image.image_url }} style={styles.card}>
             <View style={styles.backOverlay}>
               <Text style={styles.backText}>영양 성분 추가 예정</Text>
             </View>
@@ -108,18 +107,21 @@ const Main = () => {
   const { width: windowWidth } = useWindowDimensions();
   const cardWidth = windowWidth * 0.8;
   const [images, setImages] = useState([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const lastActiveTime = useRef(Date.now());
   const accumulatedTimes = useRef({});
-  // userEmail state는 한 번만 선언
-  const [userEmail, setUserEmail] = useState<string | null>(global.userEmail || null);
-  // state 선언부에 추가
+  const [userEmail, setUserEmail] = useState(global.userEmail || null);
+
+  useEffect(() => {
+    if (global.userEmail) {
+      setUserEmail(global.userEmail);
+      console.log('Global email loaded:', global.userEmail);
+    }
+  }, [global.userEmail]);
 
   const updateDwellTime = async (dwellTimes) => {
-
     try {
-      // 현재 이메일 상태 확인을 위한 로그
       console.log('현재 저장된 이메일:', global.userEmail);
 
       if (!global.userEmail) {
@@ -135,10 +137,6 @@ const Main = () => {
         }
       });
 
-      console.log('매핑된 체류시간:', mappedTimes);
-      console.log('사용할 이메일:', global.userEmail);
-
-      // response 선언 전에 요청 데이터 로깅
       const requestData = {
         dwell_times: mappedTimes,
         email: global.userEmail
@@ -153,20 +151,16 @@ const Main = () => {
         body: JSON.stringify(requestData)
       });
 
-      // 응답 처리 개선
       const responseData = await response.json();
-
       if (!response.ok) {
-        console.error('서버 응답 에러:', responseData);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       console.log('체류시간 업데이트 성공:', responseData);
       return responseData;
-
     } catch (error) {
       console.error('체류시간 업데이트 실패:', error);
-      throw error; // 에러를 상위로 전파
+      throw error;
     }
   };
 
@@ -178,8 +172,6 @@ const Main = () => {
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
       const data = await response.json();
-      console.log('서버 응답:', data);
-
       if (data.status === 'success') {
         setImages(data.images);
       } else {
@@ -203,16 +195,18 @@ const Main = () => {
       const duration = currentTime - lastActiveTime.current;
       const image = images[currentIndex];
 
-      console.log(`Image ${image.id} was viewed for ${duration}ms`);
+      if (image) {
+        console.log(`Image ${image.id} was viewed for ${duration}ms`);
+        accumulatedTimes.current[currentIndex] =
+          (accumulatedTimes.current[currentIndex] || 0) + duration;
 
-      accumulatedTimes.current[currentIndex] =
-        (accumulatedTimes.current[currentIndex] || 0) + duration;
+        setCurrentIndex(newIndex);
+        lastActiveTime.current = currentTime;
 
-      setCurrentIndex(newIndex);
-      lastActiveTime.current = currentTime;
-
-      console.log('Accumulated Times:', accumulatedTimes.current);
-      updateDwellTime(accumulatedTimes.current);
+        if (global.userEmail) {
+          updateDwellTime(accumulatedTimes.current);
+        }
+      }
     }
   };
 
@@ -224,16 +218,159 @@ const Main = () => {
       if (currentIndex >= 0 && currentIndex < images.length) {
         accumulatedTimes.current[currentIndex] =
           (accumulatedTimes.current[currentIndex] || 0) + duration;
-
-        console.log(`Final dwell time for image ${images[currentIndex]?.id}: ${duration}ms`);
-        console.log('Final Accumulated Times:', accumulatedTimes.current);
-        updateDwellTime(accumulatedTimes.current);
+        if (global.userEmail) {
+          updateDwellTime(accumulatedTimes.current);
+        }
       }
     };
   }, []);
 
-  const handleFlip = () => { };
-  const handleUnflip = () => { };
+  // FlipCard 컴포넌트 수정
+  const FlipCard = ({ image, width, height, onFlip, onUnflip, index, flipped }) => {
+    const animatedValue = useRef(new Animated.Value(0)).current;
+    const [isFlipped, setIsFlipped] = useState(false);
+  
+    const frontInterpolate = animatedValue.interpolate({
+      inputRange: [0, 180],
+      outputRange: ['0deg', '180deg'],
+    });
+  
+    const backInterpolate = animatedValue.interpolate({
+      inputRange: [0, 180],
+      outputRange: ['180deg', '360deg'],
+    });
+  
+    const flipCard = () => {
+      if (isFlipped) {
+        setIsFlipped(false);
+        Animated.spring(animatedValue, {
+          toValue: 0,
+          friction: 8,
+          tension: 10,
+          useNativeDriver: true,
+        }).start(() => {
+          onUnflip(index);
+        });
+      } else {
+        setIsFlipped(true);
+        Animated.spring(animatedValue, {
+          toValue: 180,
+          friction: 8,
+          tension: 10,
+          useNativeDriver: true,
+        }).start(() => {
+          onFlip(index);
+        });
+      }
+    };
+  
+    const [nutritionInfo, setNutritionInfo] = useState(null);
+  
+    const fetchNutritionInfo = async () => {
+      try {
+        const response = await fetch(`/api/nutrition/${image.original_id}`);
+    
+        // 응답 코드 확인
+        if (!response.ok) {
+          let errorMessage;
+          if (response.status === 404) {
+            errorMessage = '해당 음식 정보를 찾을 수 없습니다.';
+          } else {
+            const data = await response.json();
+            errorMessage = data.message || '영양 정보 가져오기에 실패했습니다.';
+          }
+          console.error('영양 정보 가져오기 실패:', errorMessage);
+          return;
+        }
+    
+        const data = await response.json();
+        setNutritionInfo(data.data);
+      } catch (error) {
+        console.error('영양 정보 가져오기 실패:', error);
+      }
+    };
+  
+    useEffect(() => {
+      if (flipped) {
+        fetchNutritionInfo();
+      }
+    }, [flipped, image.original_id]);
+  
+    return (
+      <TouchableWithoutFeedback onPress={flipCard}>
+        <View style={{ width, height, marginHorizontal: 10 }}>
+          <Animated.View
+            style={[
+              styles.flipCard,
+              {
+                transform: [{ rotateY: frontInterpolate }],
+                width: '100%',
+                height: '100%',
+                position: 'absolute',
+                opacity: isFlipped ? 0.6 : 1,
+              },
+            ]}>
+            <ImageBackground source={{ uri: image.image_url }} style={styles.card} />
+          </Animated.View>
+  
+          <Animated.View
+            style={[
+              styles.flipCard,
+              {
+                transform: [{ rotateY: backInterpolate }],
+                width: '100%',
+                height: '100%',
+                position: 'absolute',
+                opacity: isFlipped ? 0.6 : 1,
+              },
+            ]}>
+            <ImageBackground source={{ uri: image.image_url }} style={styles.card}>
+              {nutritionInfo && (
+                <View style={styles.backOverlay}>
+                  <Text style={styles.backText}>
+                    칼로리: {nutritionInfo.calories}
+                    {'\n'}
+                    탄수화물: {nutritionInfo.carbohydrates}
+                    {'\n'}
+                    단백질: {nutritionInfo.protein}
+                    {'\n'}
+                    지방: {nutritionInfo.fat}
+                  </Text>
+                </View>
+              )}
+            </ImageBackground>
+          </Animated.View>
+        </View>
+      </TouchableWithoutFeedback>
+    );
+  };
+ 
+ // Main 컴포넌트의 나머지 코드는 동일하게 유지
+ const handleFlip = (index) => {
+  const currentImage = images[index];
+  if (currentImage) {
+    const currentTime = Date.now();
+    const duration = currentTime - lastActiveTime.current;
+ 
+    accumulatedTimes.current[index] =
+      (accumulatedTimes.current[index] || 0) + duration;
+ 
+    lastActiveTime.current = currentTime;
+ 
+    if (global.userEmail) {
+      updateDwellTime(accumulatedTimes.current);
+    }
+  }
+ };
+
+  const handleUnflip = (index) => {
+    const currentImage = images[index];
+    if (currentImage) {
+      const currentTime = Date.now();
+      lastActiveTime.current = currentTime;
+    }
+  };
+
   const handleRestaurantPress = (restaurant) => {
     Alert.alert('추천 식당 선택', `${restaurant}를 선택하셨습니다.`);
   };
@@ -280,6 +417,7 @@ const Main = () => {
                 onFlip={handleFlip}
                 onUnflip={handleUnflip}
                 index={index}
+                flipped={index === currentIndex}
               />
             ))}
           </ScrollView>

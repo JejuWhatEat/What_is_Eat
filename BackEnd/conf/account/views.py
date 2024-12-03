@@ -14,6 +14,8 @@ import logging
 from .models import UserInfo, PreferredFood, UserAccount, FoodCategory
 from .utils import FOOD_DATA  # food_data에서 FOOD_DATA로 변경
 from .models import UserAnalytics
+from .models import NutritionalInformation
+
 
 logger = logging.getLogger(__name__)
 
@@ -476,3 +478,31 @@ def get_user_analytics(request, user_id):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@api_view(['GET'])
+def get_nutrition_info(request, food_id):
+    try:
+        print(f"Requested food_id: {food_id}")
+        nutrition_info = NutritionalInformation.objects.get(id=food_id)
+        print(f"Retrieved nutrition info: {nutrition_info}")
+        return Response({
+            'status': 'success',
+            'data': {
+                'food_name': nutrition_info.food_name,
+                'calories': nutrition_info.calories,
+                'carbohydrates': nutrition_info.carbohydrates,
+                'protein': nutrition_info.protein,
+                'fat': nutrition_info.fat
+            }
+        })
+    except NutritionalInformation.DoesNotExist:
+        print(f"NutritionalInformation.DoesNotExist for food_id: {food_id}")
+        return Response({
+            'status': 'error',
+            'message': '해당 음식 정보를 찾을 수 없습니다.'
+        }, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        print(f"Exception in get_nutrition_info: {str(e)}")
+        return Response({
+            'status': 'error',
+            'message': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
