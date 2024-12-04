@@ -19,13 +19,13 @@ const popularYesterday = '1. 마라탕\n2. 짬뽕\n3. 순대국밥';
 const restaurantRecommendations = {
   0: [
     { name: '아라주는 엄마치킨', url: 'https://place.map.kakao.com/20171821' },
-    { name: '푸라닭치킨 제주대점', url: 'https://place.map.kakao.com/1502959810' },
-    { name: '명품치킨 제주대점', url: 'https://place.map.kakao.com/26432601' },
+    { name: '푸라닭치킨 ', url: 'https://place.map.kakao.com/1502959810' },
+    { name: '명품치킨 ', url: 'https://place.map.kakao.com/26432601' },
   ],
   1: [
-    { name: '신전떡볶이 제주대점', url: 'https://place.map.kakao.com/603632383' },
-    { name: '레스토랑 E', url: 'https://example.com/restaurantE' },
-    { name: '레스토랑 F', url: 'https://example.com/restaurantF' },
+    { name: '신전떡볶이 ', url: 'https://place.map.kakao.com/603632383' },
+    { name: '버무리 떡볶이', url: 'https://place.map.kakao.com/958479161' },
+    { name: '스텔라 떡볶이 ', url: 'https://place.map.kakao.com/778764810' },
   ],
   2: [
     { name: '레스토랑 G', url: 'https://place.map.kakao.com/603632383' },
