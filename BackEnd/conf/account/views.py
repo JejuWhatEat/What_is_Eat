@@ -181,7 +181,10 @@ def get_food_images(request):
         request_type = request.GET.get('type', '')
 
         food_list = []
-        for number in range(1, 143):
+        prioritized_numbers = [125, 45]  # 우선순위 이미지
+        
+        # 우선순위 이미지 먼저 추가
+        for number in prioritized_numbers:
             food_info = next(
                 ({"name": name, "data": data} for name, data in FOOD_DATA.items() 
                 if data["number"] == number),
@@ -189,24 +192,70 @@ def get_food_images(request):
             )
             
             if food_info and os.path.exists(os.path.join(settings.MEDIA_ROOT, f'food_images/image{number}.jpeg.jpg')):
-                image_data = {
-                    'id': number,
-                    'original_id': number,  # 원본 ID 추가
-                    'food_name': food_info["name"],
-                    'category_id': food_info["data"]["category"],
-                    'image_url': request.build_absolute_uri(f'/media/food_images/image{number}.jpeg.jpg'),
-                    'category_name': dict(Food.CATEGORY_CHOICES)[food_info["data"]["category"]]
-                }
-                food_list.append(image_data)
+                try:
+                    nutrition = NutritionalInformation.objects.get(id=number)
+                    image_data = {
+                        'id': number,
+                        'original_id': number,
+                        'food_name': nutrition.food_name,
+                        'category_id': food_info["data"]["category"],
+                        'image_url': request.build_absolute_uri(f'/media/food_images/image{number}.jpeg.jpg'),
+                        'category_name': dict(Food.CATEGORY_CHOICES)[food_info["data"]["category"]],
+                        'nutrition_info': {
+                            'calories': nutrition.calories,
+                            'carbohydrates': nutrition.carbohydrates,
+                            'protein': nutrition.protein,
+                            'fat': nutrition.fat
+                        }
+                    }
+                    food_list.append(image_data)
+                except NutritionalInformation.DoesNotExist:
+                    continue
+        
+        # 나머지 이미지들 준비
+        remaining_images = []
+        available_numbers = list(range(1, 143))
+        for num in prioritized_numbers:
+            if num in available_numbers:
+                available_numbers.remove(num)
+                
+        # 남은 번호들을 랜덤으로 섞기
+        random.shuffle(available_numbers)
+        
+        # 랜덤으로 섞은 번호들로 이미지 추가
+        for number in available_numbers:
+            food_info = next(
+                ({"name": name, "data": data} for name, data in FOOD_DATA.items() 
+                if data["number"] == number),
+                None
+            )
+            
+            if food_info and os.path.exists(os.path.join(settings.MEDIA_ROOT, f'food_images/image{number}.jpeg.jpg')):
+                try:
+                    nutrition = NutritionalInformation.objects.get(id=number)
+                    image_data = {
+                        'id': number,
+                        'original_id': number,
+                        'food_name': nutrition.food_name,
+                        'category_id': food_info["data"]["category"],
+                        'image_url': request.build_absolute_uri(f'/media/food_images/image{number}.jpeg.jpg'),
+                        'category_name': dict(Food.CATEGORY_CHOICES)[food_info["data"]["category"]],
+                        'nutrition_info': {
+                            'calories': nutrition.calories,
+                            'carbohydrates': nutrition.carbohydrates,
+                            'protein': nutrition.protein,
+                            'fat': nutrition.fat
+                        }
+                    }
+                    remaining_images.append(image_data)
+                except NutritionalInformation.DoesNotExist:
+                    continue
+
+        # 우선순위 이미지와 랜덤 이미지 합치기
+        food_list.extend(remaining_images)
 
         if request_type == 'preferred':
-            # 랜덤으로 5개 선택하고 1-100 사이의 랜덤 ID 할당
-            selected_images = random.sample(food_list, 5)
-            random_numbers = random.sample(range(1, 101), 5)
-            
-            for img, rand_num in zip(selected_images, random_numbers):
-                img['id'] = rand_num  # 랜덤 ID 할당
-                
+            selected_images = food_list[:5]  # 우선순위 이미지 포함 상위 5개만
             return Response({
                 'status': 'success',
                 'total_count': len(selected_images),
@@ -484,6 +533,7 @@ def get_nutrition_info(request, food_id):
         print(f"Requested food_id: {food_id}")
         nutrition_info = NutritionalInformation.objects.get(id=food_id)
         print(f"Retrieved nutrition info: {nutrition_info}")
+        
         return Response({
             'status': 'success',
             'data': {
@@ -500,9 +550,3 @@ def get_nutrition_info(request, food_id):
             'status': 'error',
             'message': '해당 음식 정보를 찾을 수 없습니다.'
         }, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        print(f"Exception in get_nutrition_info: {str(e)}")
-        return Response({
-            'status': 'error',
-            'message': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
