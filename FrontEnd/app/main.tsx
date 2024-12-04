@@ -3,6 +3,7 @@ import {
   ScrollView, Text, StyleSheet, View, ImageBackground,
   Animated, useWindowDimensions, TouchableWithoutFeedback,
   TouchableOpacity, Alert, Platform, ActivityIndicator,
+  Linking, // **Linking 모듈 추가**
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -16,12 +17,35 @@ const popularToday = '1. 돈까스\n2. 비빔밥\n3. 냉면';
 const popularYesterday = '1. 마라탕\n2. 짬뽕\n3. 순대국밥';
 
 const restaurantRecommendations = {
-  0: ['레스토랑 A', '레스토랑 B', '레스토랑 C'],
-  1: ['레스토랑 D', '레스토랑 E', '레스토랑 F'],
-  2: ['레스토랑 G', '레스토랑 H', '레스토랑 I'],
-  3: ['레스토랑 J', '레스토랑 K', '레스토랑 L'],
-  4: ['레스토랑 M', '레스토랑 N', '레스토랑 O'],
+  0: [
+    { name: '아라주는 엄마치킨', url: 'https://place.map.kakao.com/20171821' },
+    { name: '푸라닭치킨 제주대점', url: 'https://place.map.kakao.com/1502959810' },
+    { name: '명품치킨 제주대점', url: 'https://place.map.kakao.com/26432601' },
+  ],
+  1: [
+    { name: '신전떡볶이 제주대점', url: 'https://place.map.kakao.com/603632383' },
+    { name: '레스토랑 E', url: 'https://example.com/restaurantE' },
+    { name: '레스토랑 F', url: 'https://example.com/restaurantF' },
+  ],
+  2: [
+    { name: '레스토랑 G', url: 'https://place.map.kakao.com/603632383' },
+    { name: '레스토랑 H', url: 'https://example.com/restaurantE' },
+    { name: '레스토랑 I', url: 'https://example.com/restaurantF' },
+  ],
+  3: [
+    { name: '레스토랑 J', url: 'https://place.map.kakao.com/603632383' },
+    { name: '레스토랑 K', url: 'https://example.com/restaurantE' },
+    { name: '레스토랑 L', url: 'https://example.com/restaurantF' },
+  ],
+  4: [
+    { name: '레스토랑 M', url: 'https://place.map.kakao.com/603632383' },
+    { name: '레스토랑 N', url: 'https://example.com/restaurantE' },
+    { name: '레스토랑 O', url: 'https://example.com/restaurantF' },
+  ],
+
+  // 나머지 인덱스들도 동일하게 수정
 };
+
 
 const FlipCard = ({ image, width, height, onFlip, onUnflip, index }) => {
   const animatedValue = useRef(new Animated.Value(0)).current;
@@ -372,7 +396,13 @@ const Main = () => {
   };
 
   const handleRestaurantPress = (restaurant) => {
-    Alert.alert('추천 식당 선택', `${restaurant}를 선택하셨습니다.`);
+    if (restaurant.url) {
+      Linking.openURL(restaurant.url).catch((err) =>
+        console.error("Failed to open URL:", err)
+      );
+    } else {
+      Alert.alert('알림', `${restaurant.name}의 URL이 없습니다.`);
+    }
   };
 
   if (isLoading) {
@@ -455,11 +485,12 @@ const Main = () => {
                 style={styles.restaurantButton}
                 onPress={() => handleRestaurantPress(item)}
               >
-                <Text style={styles.restaurantButtonText}>{item}</Text>
+                <Text style={styles.restaurantButtonText}>{item.name}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
+
 
         <View style={styles.infoContainer}>
           <Text style={styles.infoTitle}>오늘의 인기 음식은?</Text>
