@@ -288,38 +288,6 @@ const Main = () => {
       }
     };
   
-    const [nutritionInfo, setNutritionInfo] = useState(null);
-  
-    const fetchNutritionInfo = async () => {
-      try {
-        const response = await fetch(`/api/nutrition/${image.original_id}`);
-    
-        // 응답 코드 확인
-        if (!response.ok) {
-          let errorMessage;
-          if (response.status === 404) {
-            errorMessage = '해당 음식 정보를 찾을 수 없습니다.';
-          } else {
-            const data = await response.json();
-            errorMessage = data.message || '영양 정보 가져오기에 실패했습니다.';
-          }
-          console.error('영양 정보 가져오기 실패:', errorMessage);
-          return;
-        }
-    
-        const data = await response.json();
-        setNutritionInfo(data.data);
-      } catch (error) {
-        console.error('영양 정보 가져오기 실패:', error);
-      }
-    };
-  
-    useEffect(() => {
-      if (flipped) {
-        fetchNutritionInfo();
-      }
-    }, [flipped, image.original_id]);
-  
     return (
       <TouchableWithoutFeedback onPress={flipCard}>
         <View style={{ width, height, marginHorizontal: 10 }}>
@@ -331,7 +299,7 @@ const Main = () => {
                 width: '100%',
                 height: '100%',
                 position: 'absolute',
-                opacity: isFlipped ? 0.6 : 1,
+                opacity: 1,  // 앞면은 원래대로 투명도 1
               },
             ]}>
             <ImageBackground source={{ uri: image.image_url }} style={styles.card} />
@@ -345,20 +313,20 @@ const Main = () => {
                 width: '100%',
                 height: '100%',
                 position: 'absolute',
-                opacity: isFlipped ? 0.6 : 1,
+                opacity: 0.6,  // 뒷면은 0.6 투명도 유지
               },
             ]}>
             <ImageBackground source={{ uri: image.image_url }} style={styles.card}>
-              {nutritionInfo && (
+              {image.nutrition_info && (
                 <View style={styles.backOverlay}>
                   <Text style={styles.backText}>
-                    칼로리: {nutritionInfo.calories}
+                    칼로리: {image.nutrition_info.calories}
                     {'\n'}
-                    탄수화물: {nutritionInfo.carbohydrates}
+                    탄수화물: {image.nutrition_info.carbohydrates}
                     {'\n'}
-                    단백질: {nutritionInfo.protein}
+                    단백질: {image.nutrition_info.protein}
                     {'\n'}
-                    지방: {nutritionInfo.fat}
+                    지방: {image.nutrition_info.fat}
                   </Text>
                 </View>
               )}
